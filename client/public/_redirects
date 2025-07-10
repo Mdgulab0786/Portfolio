@@ -1,5 +1,2 @@
-# Netlify redirects file
 /*    /index.html   200
 
-# Handle form submissions
-/thank-you   /index.html   200
