@@ -7,7 +7,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-slate-800 dark:bg-slate-900 text-white py-12">
+    <footer className="bg-slate-800 dark:bg-slate-900 text-white py-12 mt-auto">
       <div className="container mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-6 md:mb-0">
@@ -34,10 +34,10 @@ const Footer = () => {
               About
             </button>
             <button
-              onClick={() => scrollToSection("projects")}
+              onClick={() => scrollToSection("certifications")}
               className="text-slate-400 hover:text-white transition-colors duration-200"
             >
-              Projects
+              Certifications
             </button>
             <button
               onClick={() => scrollToSection("contact")}
