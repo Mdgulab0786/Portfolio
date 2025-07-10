@@ -28,6 +28,7 @@ export const insertContactSchema = createInsertSchema(contacts).pick({
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 export type InsertContact = z.infer<typeof insertContactSchema>;
+
+export type User = typeof users.$inferSelect;
 export type Contact = typeof contacts.$inferSelect;
