@@ -189,8 +189,8 @@ const ContactSection = () => {
     {
       icon: Phone,
       title: "Phone",
-      value: "+91 97112143",
-      link: "tel:+919711214300",
+      value: "+91 9711214379",
+      link: "tel:+919711214379",
       description: "Call me for urgent matters",
       color: "from-green-500 to-emerald-500"
     },
@@ -350,7 +350,7 @@ const ContactSection = () => {
                 </Button>
                 
                 <Button
-                  onClick={() => window.open("https://wa.me/919711214300", "_blank")}
+                  onClick={() => window.open("https://wa.me/919711214379", "_blank")}
                   variant="outline"
                   className="w-full border-2 border-green-500 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white transform hover:scale-105 transition-all duration-300 py-4 rounded-2xl font-semibold"
                 >

@@ -34,10 +34,10 @@ const HeroSection = () => {
   ];
 
   const socialLinks = [
-    { icon: Github, href: "#", label: "GitHub", color: "hover:text-gray-800 dark:hover:text-gray-200" },
-    { icon: Linkedin, href: "#", label: "LinkedIn", color: "hover:text-blue-600" },
+    { icon: Github, href: "https://github.com/Mdgulab0786", label: "GitHub", color: "hover:text-gray-800 dark:hover:text-gray-200" },
+    { icon: Linkedin, href: "https://www.linkedin.com/in/md-gulab-team66/", label: "LinkedIn", color: "hover:text-blue-600" },
     { icon: Twitter, href: "#", label: "Twitter", color: "hover:text-blue-400" },
-    { icon: Mail, href: "#", label: "Email", color: "hover:text-red-500" }
+    { icon: Mail, href: "mailto:mdgulab@gmail.com", label: "Email", color: "hover:text-red-500" }
   ];
 
   const quickStats = [
@@ -322,15 +322,7 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Scroll Indicator */}
-        <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 transition-all duration-1000 delay-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="flex flex-col items-center space-y-2 animate-bounce">
-            <span className="text-sm text-slate-500 dark:text-slate-400">Scroll to explore</span>
-            <div className="w-6 h-10 border-2 border-slate-300 dark:border-slate-600 rounded-full flex justify-center">
-              <div className="w-1 h-3 bg-slate-400 dark:bg-slate-500 rounded-full mt-2 animate-pulse"></div>
-            </div>
-          </div>
-        </div>
+     
       </div>
     </section>
   );
