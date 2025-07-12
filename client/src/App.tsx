@@ -1,16 +1,19 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import Navigation from "@/components/navigation";
 import HeroSection from "@/components/hero-section";
 import AboutSection from "@/components/about-section";
-import SkillsSection from './components/skills-section';
-import ProjectsSection from './components/projects-section';
+import SkillsSection from "./components/skills-section";
+import ProjectsSection from "./components/projects-section";
 import CertificationsSection from "@/components/certifications-section";
 import ContactSection from "@/components/contact-section";
 import Footer from "@/components/footer";
-import Admin from "@/pages/admin"; // ✅ Import your Admin component
+
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -18,9 +21,9 @@ function App() {
       <ThemeProvider defaultTheme="light" storageKey="portfolio-theme">
         <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
           <Navigation />
-
+          
           <Routes>
-            {/* ✅ Route for Portfolio Page */}
+            {/* Home Page */}
             <Route
               path="/"
               element={
@@ -36,8 +39,18 @@ function App() {
               }
             />
 
-            {/* ✅ Route for Admin Page */}
-            <Route path="/admin" element={<Admin />} />
+            {/* Admin Login Page */}
+            <Route path="/admin" element={<AdminLogin />} />
+
+            {/* Admin Dashboard - Protected */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </div>
       </ThemeProvider>

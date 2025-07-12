@@ -15,7 +15,7 @@ const Navigation = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const { theme, setTheme } = useTheme();
-
+  const token = localStorage.getItem("adminToken");
   const navItems = [
     { label: "Home", href: "home", icon: Home },
     { label: "About", href: "about", icon: User },
@@ -23,7 +23,12 @@ const Navigation = () => {
     { label: "Projects", href: "projects", icon: Briefcase },
     { label: "Certifications", href: "certifications", icon: Award },
     { label: "Contact", href: "contact", icon: Mail },
-    { label: "Admin", href: "/admin", icon: Settings, isExternal: true },
+    {
+    label: token ? "Admin Panel" : "Admin Login",
+    href: "/admin",
+    icon: Settings,
+    isExternal: true,
+  },
   ];
 
   // Handle scroll effects
