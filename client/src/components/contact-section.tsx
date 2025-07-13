@@ -75,7 +75,7 @@ const ContactSection = () => {
 
   // Initialize EmailJS
   useEffect(() => {
-    emailjs.init("YOUR_PUBLIC_KEY"); // Replace with your EmailJS public key
+    emailjs.init("F6QZXuROnXC0dFiq7"); // Replace with your EmailJS public key
   }, []);
 
   // Intersection Observer for animations
@@ -129,8 +129,8 @@ const ContactSection = () => {
 
       // Replace these with your EmailJS credentials
       const result = await emailjs.send(
-        'YOUR_SERVICE_ID',    // Replace with your EmailJS service ID
-        'YOUR_TEMPLATE_ID',   // Replace with your EmailJS template ID
+        'service_z2qz2z9',    // Replace with your EmailJS service ID
+        'template_akx2yf1',   // Replace with your EmailJS template ID
         templateParams
       );
 
