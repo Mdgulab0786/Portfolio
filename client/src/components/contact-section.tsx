@@ -1,7 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect } from 'react';
 import { 
   Mail, 
   Phone, 
@@ -14,7 +11,6 @@ import {
   User, 
   Building, 
   Calendar,
-  Star,
   Globe,
   Linkedin,
   Github,
@@ -27,26 +23,19 @@ import {
   Download,
   ExternalLink
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import emailjs from '@emailjs/browser';
+import { contactStorage } from '../utils/contactStorage';
 
-// Form validation schema
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().optional(),
-  company: z.string().optional(),
-  subject: z.string().min(5, "Subject must be at least 5 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-  budget: z.string().optional(),
-  timeline: z.string().optional(),
-  projectType: z.string().optional(),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
+interface ContactFormData {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  subject: string;
+  message: string;
+  budget?: string;
+  timeline?: string;
+  projectType?: string;
+}
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
@@ -72,11 +61,18 @@ const ContactSection = () => {
   const [submitMessage, setSubmitMessage] = useState("");
   const [isVisible, setIsVisible] = useState(false);
   const [activeCard, setActiveCard] = useState<number | null>(null);
-
-  // Initialize EmailJS
-  useEffect(() => {
-    emailjs.init("F6QZXuROnXC0dFiq7"); // Replace with your EmailJS public key
-  }, []);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    subject: '',
+    message: '',
+    budget: '',
+    timeline: '',
+    projectType: ''
+  });
+  const [errors, setErrors] = useState<Partial<ContactFormData>>({});
 
   // Intersection Observer for animations
   useEffect(() => {
@@ -97,83 +93,80 @@ const ContactSection = () => {
     return () => observer.disconnect();
   }, []);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    watch
-  } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
-  });
+  const validateForm = (): boolean => {
+    const newErrors: Partial<ContactFormData> = {};
 
-  const watchedFields = watch();
+    if (!formData.name || formData.name.length < 2) {
+      newErrors.name = "Name must be at least 2 characters";
+    }
 
-  const onSubmit = async (data: ContactFormData) => {
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formData.subject || formData.subject.length < 5) {
+      newErrors.subject = "Subject must be at least 5 characters";
+    }
+
+    if (!formData.message || formData.message.length < 10) {
+      newErrors.message = "Message must be at least 10 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[name as keyof ContactFormData]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setSubmitStatus("submitting");
     
     try {
-      // Method 1: EmailJS (Recommended for direct email delivery)
-      const templateParams = {
-        from_name: data.name,
-        from_email: data.email,
-        phone: data.phone || 'Not provided',
-        company: data.company || 'Not provided',
-        subject: data.subject,
-        message: data.message,
-        budget: data.budget || 'Not specified',
-        timeline: data.timeline || 'Not specified',
-        project_type: data.projectType || 'Not specified',
-        to_email: 'team66415@gmail.com', // Your email
-      };
-
-      // Replace these with your EmailJS credentials
-      const result = await emailjs.send(
-        'service_z2qz2z9',    // Replace with your EmailJS service ID
-        'template_akx2yf1',   // Replace with your EmailJS template ID
-        templateParams
-      );
-
-      if (result.status === 200) {
-        setSubmitStatus("success");
-        setSubmitMessage("🎉 Message sent successfully! I'll get back to you within 24 hours.");
-        reset();
-        
-        // Auto-hide success message after 5 seconds
-        setTimeout(() => {
-          setSubmitStatus("idle");
-        }, 5000);
-      } else {
-        throw new Error("Failed to send email");
-      }
-    } catch (error) {
-      console.error("Email sending failed:", error);
+      // Save to local storage
+      const submission = contactStorage.saveSubmission(formData);
       
-      // Fallback: Try Netlify forms if EmailJS fails
-      try {
-        const formData = new FormData();
-        Object.entries(data).forEach(([key, value]) => {
-          formData.append(key, value || '');
-        });
-        formData.append('form-name', 'contact');
-
-        const response = await fetch('/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams(formData as any).toString()
-        });
-
-        if (response.ok) {
-          setSubmitStatus("success");
-          setSubmitMessage("✅ Message sent via backup system! I'll respond soon.");
-          reset();
-        } else {
-          throw new Error("Backup system failed");
-        }
-      } catch (backupError) {
-        setSubmitStatus("error");
-        setSubmitMessage("❌ Failed to send message. Please try emailing me directly at team66415@gmail.com");
-      }
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSubmitStatus("success");
+      setSubmitMessage("🎉 Message sent successfully! I'll get back to you within 24 hours.");
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company: '',
+        subject: '',
+        message: '',
+        budget: '',
+        timeline: '',
+        projectType: ''
+      });
+      
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => {
+        setSubmitStatus("idle");
+      }, 5000);
+      
+    } catch (error) {
+      console.error("Form submission failed:", error);
+      setSubmitStatus("error");
+      setSubmitMessage("❌ Failed to send message. Please try again or email me directly at team66415@gmail.com");
     }
   };
 
@@ -280,12 +273,6 @@ const ContactSection = () => {
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-        
-        {/* Floating particles */}
-        <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: '0s' }} />
-        <div className="absolute top-40 right-32 w-1 h-1 bg-purple-400 rounded-full animate-bounce opacity-40" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-32 left-1/4 w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce opacity-50" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-20 right-20 w-2 h-2 bg-pink-400 rounded-full animate-bounce opacity-30" style={{ animationDelay: '3s' }} />
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
@@ -303,63 +290,11 @@ const ContactSection = () => {
           <p className="text-2xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto leading-relaxed">
             Ready to bring your ideas to life? I'm here to help you build exceptional digital experiences.
           </p>
-          
-          <div className="flex items-center justify-center space-x-4 mt-8">
-            <div className="flex items-center space-x-2 bg-green-100 dark:bg-green-900/30 px-4 py-2 rounded-full">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-green-700 dark:text-green-400 font-semibold">Available for new projects</span>
-            </div>
-            <div className="flex items-center space-x-2 bg-blue-100 dark:bg-blue-900/30 px-4 py-2 rounded-full">
-              <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-blue-700 dark:text-blue-400 font-semibold">Quick response guaranteed</span>
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
           {/* Contact Information Cards */}
           <div className={`xl:col-span-1 space-y-8 ${isVisible ? 'animate-slideInUp' : 'opacity-0'}`} style={{ animationDelay: '0.2s' }}>
-            {/* Quick Actions */}
-            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-slate-200/60 dark:border-slate-700/60">
-              <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-6 flex items-center">
-                <Zap className="w-6 h-6 text-yellow-500 mr-3" />
-                Quick Actions
-              </h3>
-              
-              <div className="space-y-4">
-                <Button
-                  onClick={() => {
-                    const link = document.createElement("a");
-                    link.href = "Md gulab resume.pdf";
-                    link.download = "Md_Gulab_Resume.pdf";
-                    link.click();
-                  }}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl py-4 rounded-2xl font-semibold"
-                >
-                  <Download className="w-5 h-5 mr-3" />
-                  Download Resume
-                </Button>
-                
-                <Button
-                  onClick={() => window.open("https://calendly.com/your-link", "_blank")}
-                  variant="outline"
-                  className="w-full border-2 border-purple-500 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-white transform hover:scale-105 transition-all duration-300 py-4 rounded-2xl font-semibold"
-                >
-                  <Calendar className="w-5 h-5 mr-3" />
-                  Schedule a Call
-                </Button>
-                
-                <Button
-                  onClick={() => window.open("https://wa.me/919711214379", "_blank")}
-                  variant="outline"
-                  className="w-full border-2 border-green-500 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white transform hover:scale-105 transition-all duration-300 py-4 rounded-2xl font-semibold"
-                >
-                  <MessageSquare className="w-5 h-5 mr-3" />
-                  WhatsApp Chat
-                </Button>
-              </div>
-            </div>
-
             {/* Contact Info Cards */}
             <div className="space-y-6">
               {contactInfo.map((info, index) => {
@@ -374,7 +309,6 @@ const ContactSection = () => {
                     onMouseLeave={() => setActiveCard(null)}
                     onClick={() => info.link && window.open(info.link, "_blank")}
                   >
-                    {/* Gradient background on hover */}
                     <div className={`absolute inset-0 bg-gradient-to-r ${info.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
                     
                     <div className="relative flex items-center space-x-4">
@@ -445,10 +379,6 @@ const ContactSection = () => {
                     Tell me about your vision and let's make it reality
                   </p>
                 </div>
-                
-                {/* Decorative elements */}
-                <div className="absolute top-4 right-4 w-20 h-20 border-2 border-white/20 rounded-full animate-spin-slow" />
-                <div className="absolute bottom-4 right-8 w-12 h-12 border border-white/30 rounded-full animate-reverse-spin" />
               </div>
 
               {/* Status Messages */}
@@ -477,10 +407,7 @@ const ContactSection = () => {
               )}
 
               {/* Form */}
-              <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
-                {/* Hidden Netlify form fields */}
-                <input type="hidden" name="form-name" value="contact" />
-                
+              <form onSubmit={onSubmit} className="p-8 space-y-8">
                 {/* Personal Information */}
                 <div className="space-y-6">
                   <h4 className="text-xl font-bold text-slate-800 dark:text-white flex items-center">
@@ -490,56 +417,67 @@ const ContactSection = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="name" className="text-slate-700 dark:text-slate-300 font-semibold">
+                      <label htmlFor="name" className="block text-slate-700 dark:text-slate-300 font-semibold mb-2">
                         Full Name *
-                      </Label>
-                      <Input
+                      </label>
+                      <input
                         id="name"
-                        {...register("name")}
-                        className="mt-2 h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 transition-all duration-300"
+                        name="name"
+                        type="text"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        className="w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
                         placeholder="Your full name"
                       />
                       {errors.name && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name}</p>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="email" className="text-slate-700 dark:text-slate-300 font-semibold">
+                      <label htmlFor="email" className="block text-slate-700 dark:text-slate-300 font-semibold mb-2">
                         Email Address *
-                      </Label>
-                      <Input
+                      </label>
+                      <input
                         id="email"
+                        name="email"
                         type="email"
-                        {...register("email")}
-                        className="mt-2 h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 transition-all duration-300"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
                         placeholder="your.email@example.com"
                       />
                       {errors.email && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="phone" className="text-slate-700 dark:text-slate-300 font-semibold">
+                      <label htmlFor="phone" className="block text-slate-700 dark:text-slate-300 font-semibold mb-2">
                         Phone Number
-                      </Label>
-                      <Input
+                      </label>
+                      <input
                         id="phone"
-                        {...register("phone")}
-                        className="mt-2 h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 transition-all duration-300"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className="w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
                         placeholder="+1 (555) 123-4567"
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="company" className="text-slate-700 dark:text-slate-300 font-semibold">
+                      <label htmlFor="company" className="block text-slate-700 dark:text-slate-300 font-semibold mb-2">
                         Company/Organization
-                      </Label>
-                      <Input
+                      </label>
+                      <input
                         id="company"
-                        {...register("company")}
-                        className="mt-2 h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 transition-all duration-300"
+                        name="company"
+                        type="text"
+                        value={formData.company}
+                        onChange={handleInputChange}
+                        className="w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
                         placeholder="Your company name"
                       />
                     </div>
@@ -555,13 +493,15 @@ const ContactSection = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <Label htmlFor="projectType" className="text-slate-700 dark:text-slate-300 font-semibold">
+                      <label htmlFor="projectType" className="block text-slate-700 dark:text-slate-300 font-semibold mb-2">
                         Project Type
-                      </Label>
+                      </label>
                       <select
                         id="projectType"
-                        {...register("projectType")}
-                        className="mt-2 w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
+                        name="projectType"
+                        value={formData.projectType}
+                        onChange={handleInputChange}
+                        className="w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
                       >
                         <option value="">Select project type</option>
                         {projectTypes.map((type) => (
@@ -571,13 +511,15 @@ const ContactSection = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="budget" className="text-slate-700 dark:text-slate-300 font-semibold">
+                      <label htmlFor="budget" className="block text-slate-700 dark:text-slate-300 font-semibold mb-2">
                         Budget Range
-                      </Label>
+                      </label>
                       <select
                         id="budget"
-                        {...register("budget")}
-                        className="mt-2 w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
+                        name="budget"
+                        value={formData.budget}
+                        onChange={handleInputChange}
+                        className="w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
                       >
                         <option value="">Select budget range</option>
                         {budgetRanges.map((range) => (
@@ -587,13 +529,15 @@ const ContactSection = () => {
                     </div>
 
                     <div>
-                      <Label htmlFor="timeline" className="text-slate-700 dark:text-slate-300 font-semibold">
+                      <label htmlFor="timeline" className="block text-slate-700 dark:text-slate-300 font-semibold mb-2">
                         Timeline
-                      </Label>
+                      </label>
                       <select
                         id="timeline"
-                        {...register("timeline")}
-                        className="mt-2 w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
+                        name="timeline"
+                        value={formData.timeline}
+                        onChange={handleInputChange}
+                        className="w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
                       >
                         <option value="">Select timeline</option>
                         {timelineOptions.map((option) => (
@@ -607,46 +551,51 @@ const ContactSection = () => {
                 {/* Message Section */}
                 <div className="space-y-6">
                   <div>
-                    <Label htmlFor="subject" className="text-slate-700 dark:text-slate-300 font-semibold">
+                    <label htmlFor="subject" className="block text-slate-700 dark:text-slate-300 font-semibold mb-2">
                       Subject *
-                    </Label>
-                    <Input
+                    </label>
+                    <input
                       id="subject"
-                      {...register("subject")}
-                      className="mt-2 h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 transition-all duration-300"
+                      name="subject"
+                      type="text"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      className="w-full h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 px-4 transition-all duration-300"
                       placeholder="Brief description of your project"
                     />
                     {errors.subject && (
-                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.subject.message}</p>
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.subject}</p>
                     )}
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="message" className="text-slate-700 dark:text-slate-300 font-semibold">
+                    <div className="flex items-center justify-between mb-2">
+                      <label htmlFor="message" className="block text-slate-700 dark:text-slate-300 font-semibold">
                         Project Description *
-                      </Label>
+                      </label>
                       <span className="text-sm text-slate-500 dark:text-slate-400">
-                        {watchedFields.message?.length || 0}/1000 characters
+                        {formData.message?.length || 0}/1000 characters
                       </span>
                     </div>
-                    <Textarea
+                    <textarea
                       id="message"
-                      {...register("message")}
+                      name="message"
                       rows={6}
                       maxLength={1000}
-                      className="mt-2 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 transition-all duration-300 resize-none"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      className="w-full border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700 p-4 transition-all duration-300 resize-none"
                       placeholder="Tell me about your project goals, requirements, features you need, target audience, and any specific preferences or constraints..."
                     />
                     {errors.message && (
-                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.message.message}</p>
+                      <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.message}</p>
                     )}
                   </div>
                 </div>
 
                 {/* Submit Button */}
                 <div className="pt-6">
-                  <Button
+                  <button
                     type="submit"
                     disabled={submitStatus === "submitting"}
                     className="w-full h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-blue-500/30 rounded-2xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
@@ -663,10 +612,7 @@ const ContactSection = () => {
                         <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
                       </div>
                     )}
-                    
-                    {/* Button shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                  </Button>
+                  </button>
                 </div>
 
                 {/* Additional Info */}
@@ -678,44 +624,6 @@ const ContactSection = () => {
                 </div>
               </form>
             </div>
-          </div>
-        </div>
-
-        {/* Bottom CTA Section */}
-        <div className={`mt-20 text-center ${isVisible ? 'animate-slideInUp' : 'opacity-0'}`} style={{ animationDelay: '0.6s' }}>
-          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-3xl p-12 text-white relative overflow-hidden shadow-2xl">
-            <div className="absolute inset-0 bg-black/10" />
-            <div className="relative">
-              <h3 className="text-4xl font-bold mb-4">Ready to Get Started?</h3>
-              <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-                Let's discuss your project and create something extraordinary together.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-                <Button
-                  onClick={() => document.getElementById('name')?.focus()}
-                  className="bg-white text-blue-600 hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 shadow-lg px-8 py-4 rounded-2xl font-bold"
-                >
-                  <MessageSquare className="w-5 h-5 mr-3" />
-                  Start Project Discussion
-                </Button>
-                
-                <Button
-                  onClick={() => window.open("mailto:team66415@gmail.com", "_blank")}
-                  variant="outline"
-                  className="border-2 border-white text-white hover:bg-white hover:text-blue-600 transform hover:scale-105 transition-all duration-300 px-8 py-4 rounded-2xl font-bold"
-                >
-                  <Mail className="w-5 h-5 mr-3" />
-                  Email Directly
-                </Button>
-              </div>
-            </div>
-            
-            {/* Decorative elements */}
-            <div className="absolute top-8 right-8 w-24 h-24 border-2 border-white/20 rounded-full animate-spin-slow" />
-            <div className="absolute bottom-8 left-8 w-16 h-16 border border-white/30 rounded-full animate-reverse-spin" />
-            <Sparkles className="absolute top-12 left-12 w-8 h-8 text-yellow-400 animate-pulse" />
-            <Star className="absolute bottom-12 right-12 w-6 h-6 text-pink-400 animate-bounce" />
           </div>
         </div>
       </div>

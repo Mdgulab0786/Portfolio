@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { 
   LogOut, 
   Shield, 
@@ -14,12 +13,36 @@ import {
   Download,
   RefreshCw,
   Calendar,
-  Clock
+  Clock,
+  MessageSquare,
+  User,
+  Building,
+  Phone,
+  Trash2,
+  CheckCircle,
+  AlertCircle,
+  Search,
+  Filter,
+  ExternalLink
 } from "lucide-react";
+import { contactStorage } from '../utils/contactStorage';
+import { ContactSubmission, ContactStats } from '../types/contact';
 
 const AdminDashboard = () => {
   const [adminInfo, setAdminInfo] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
+  const [stats, setStats] = useState<ContactStats>({
+    total: 0,
+    new: 0,
+    read: 0,
+    replied: 0,
+    todayCount: 0,
+    weekCount: 0
+  });
+  const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'read' | 'replied'>('all');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +58,9 @@ const AdminDashboard = () => {
       }
     }
 
+    // Load contact data
+    loadContactData();
+
     // Update time every second
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -42,6 +68,13 @@ const AdminDashboard = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  const loadContactData = () => {
+    const allSubmissions = contactStorage.getAllSubmissions();
+    const contactStats = contactStorage.getStats();
+    setSubmissions(allSubmissions);
+    setStats(contactStats);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
@@ -52,19 +85,57 @@ const AdminDashboard = () => {
     navigate("/");
   };
 
-  const stats = [
-    { icon: Users, label: "Total Visitors", value: "1,247", change: "+12%", color: "text-blue-600" },
-    { icon: Mail, label: "Messages", value: "23", change: "+5%", color: "text-green-600" },
-    { icon: Eye, label: "Page Views", value: "5,432", change: "+18%", color: "text-purple-600" },
-    { icon: BarChart3, label: "Engagement", value: "89%", change: "+3%", color: "text-orange-600" }
-  ];
+  const handleStatusChange = (id: string, status: ContactSubmission['status']) => {
+    contactStorage.updateSubmissionStatus(id, status);
+    loadContactData();
+    if (selectedSubmission && selectedSubmission.id === id) {
+      setSelectedSubmission({ ...selectedSubmission, status });
+    }
+  };
 
-  const recentActivities = [
-    { action: "New contact form submission", time: "2 minutes ago", type: "message" },
-    { action: "Portfolio page viewed", time: "5 minutes ago", type: "view" },
-    { action: "Resume downloaded", time: "12 minutes ago", type: "download" },
-    { action: "Skills section updated", time: "1 hour ago", type: "update" },
-    { action: "New project added", time: "2 hours ago", type: "create" }
+  const handleDeleteSubmission = (id: string) => {
+    if (confirm('Are you sure you want to delete this submission?')) {
+      contactStorage.deleteSubmission(id);
+      loadContactData();
+      if (selectedSubmission && selectedSubmission.id === id) {
+        setSelectedSubmission(null);
+      }
+    }
+  };
+
+  const filteredSubmissions = submissions.filter(submission => {
+    const matchesSearch = submission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         submission.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         submission.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusColor = (status: ContactSubmission['status']) => {
+    switch (status) {
+      case 'new': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'read': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'replied': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+    }
+  };
+
+  const getStatusIcon = (status: ContactSubmission['status']) => {
+    switch (status) {
+      case 'new': return <AlertCircle className="w-4 h-4" />;
+      case 'read': return <Eye className="w-4 h-4" />;
+      case 'replied': return <CheckCircle className="w-4 h-4" />;
+      default: return <MessageSquare className="w-4 h-4" />;
+    }
+  };
+
+  const statsCards = [
+    { icon: MessageSquare, label: "Total Messages", value: stats.total.toString(), change: `+${stats.todayCount} today`, color: "text-blue-600" },
+    { icon: AlertCircle, label: "New Messages", value: stats.new.toString(), change: "Unread", color: "text-orange-600" },
+    { icon: Eye, label: "Read Messages", value: stats.read.toString(), change: "Processed", color: "text-yellow-600" },
+    { icon: CheckCircle, label: "Replied", value: stats.replied.toString(), change: "Completed", color: "text-green-600" }
   ];
 
   return (
@@ -95,30 +166,32 @@ const AdminDashboard = () => {
               </div>
 
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
+              <button className="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors duration-200">
                 <Bell className="w-5 h-5" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-              </Button>
+                {stats.new > 0 && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {stats.new}
+                  </div>
+                )}
+              </button>
 
               {/* Go to Home */}
-              <Button 
-                variant="outline" 
+              <button 
                 onClick={handleGoHome}
-                className="hidden md:flex items-center space-x-2"
+                className="hidden md:flex items-center space-x-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors duration-200"
               >
                 <Home className="w-4 h-4" />
                 <span>View Site</span>
-              </Button>
+              </button>
 
               {/* Logout */}
-              <Button 
-                variant="destructive" 
+              <button 
                 onClick={handleLogout}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -130,9 +203,9 @@ const AdminDashboard = () => {
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl p-8 text-white mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold mb-2">Welcome to Admin Panel</h2>
+              <h2 className="text-3xl font-bold mb-2">Contact Management</h2>
               <p className="text-blue-100 text-lg">
-                Manage your portfolio and track visitor analytics
+                Manage contact form submissions and track communications
               </p>
             </div>
             <div className="hidden md:block">
@@ -146,7 +219,7 @@ const AdminDashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => {
+          {statsCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <div key={index} className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-slate-200/50 dark:border-slate-700/50 hover:shadow-xl transition-all duration-300 hover:scale-105">
@@ -154,7 +227,7 @@ const AdminDashboard = () => {
                   <div className={`p-3 rounded-xl bg-slate-100 dark:bg-slate-700 ${stat.color}`}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                  <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                     {stat.change}
                   </span>
                 </div>
@@ -169,75 +242,245 @@ const AdminDashboard = () => {
           })}
         </div>
 
-        {/* Content Grid */}
+        {/* Contact Submissions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Activities */}
-          <div className="lg:col-span-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-slate-200/50 dark:border-slate-700/50">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white">Recent Activities</h3>
-              <Button variant="ghost" size="icon">
-                <RefreshCw className="w-4 h-4" />
-              </Button>
+          {/* Submissions List */}
+          <div className="lg:col-span-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200/50 dark:border-slate-700/50">
+            <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Contact Submissions</h3>
+                <button 
+                  onClick={loadContactData}
+                  className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors duration-200"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Search and Filter */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, or subject..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="px-4 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Status</option>
+                  <option value="new">New</option>
+                  <option value="read">Read</option>
+                  <option value="replied">Replied</option>
+                </select>
+              </div>
             </div>
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-center space-x-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-200">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-slate-800 dark:text-white font-medium">{activity.action}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{activity.time}</p>
+
+            <div className="max-h-96 overflow-y-auto">
+              {filteredSubmissions.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                  <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No contact submissions found</p>
+                </div>
+              ) : (
+                <div className="space-y-2 p-4">
+                  {filteredSubmissions.map((submission) => (
+                    <div
+                      key={submission.id}
+                      onClick={() => setSelectedSubmission(submission)}
+                      className={`p-4 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
+                        selectedSubmission?.id === submission.id
+                          ? 'bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-700'
+                          : 'bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h4 className="font-semibold text-slate-800 dark:text-white">
+                              {submission.name}
+                            </h4>
+                            <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(submission.status)}`}>
+                              {getStatusIcon(submission.status)}
+                              <span className="capitalize">{submission.status}</span>
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">
+                            {submission.email}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                            {submission.subject}
+                          </p>
+                          <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                            {new Date(submission.submittedAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Submission Details */}
+          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200/50 dark:border-slate-700/50">
+            {selectedSubmission ? (
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-slate-800 dark:text-white">Message Details</h3>
+                  <button
+                    onClick={() => handleDeleteSubmission(selectedSubmission.id)}
+                    className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors duration-200"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Status Actions */}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={selectedSubmission.status}
+                      onChange={(e) => handleStatusChange(selectedSubmission.id, e.target.value as any)}
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="new">New</option>
+                      <option value="read">Read</option>
+                      <option value="replied">Replied</option>
+                    </select>
+                  </div>
+
+                  {/* Contact Info */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <User className="w-5 h-5 text-slate-500" />
+                      <div>
+                        <p className="font-medium text-slate-800 dark:text-white">{selectedSubmission.name}</p>
+                        <p className="text-sm text-slate-500">Name</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <Mail className="w-5 h-5 text-slate-500" />
+                      <div>
+                        <a 
+                          href={`mailto:${selectedSubmission.email}`}
+                          className="font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          {selectedSubmission.email}
+                        </a>
+                        <p className="text-sm text-slate-500">Email</p>
+                      </div>
+                    </div>
+
+                    {selectedSubmission.phone && (
+                      <div className="flex items-center space-x-3">
+                        <Phone className="w-5 h-5 text-slate-500" />
+                        <div>
+                          <a 
+                            href={`tel:${selectedSubmission.phone}`}
+                            className="font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            {selectedSubmission.phone}
+                          </a>
+                          <p className="text-sm text-slate-500">Phone</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedSubmission.company && (
+                      <div className="flex items-center space-x-3">
+                        <Building className="w-5 h-5 text-slate-500" />
+                        <div>
+                          <p className="font-medium text-slate-800 dark:text-white">{selectedSubmission.company}</p>
+                          <p className="text-sm text-slate-500">Company</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Project Details */}
+                  {(selectedSubmission.projectType || selectedSubmission.budget || selectedSubmission.timeline) && (
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                      <h4 className="font-semibold text-slate-800 dark:text-white mb-3">Project Details</h4>
+                      <div className="space-y-2">
+                        {selectedSubmission.projectType && (
+                          <p className="text-sm"><span className="font-medium">Type:</span> {selectedSubmission.projectType}</p>
+                        )}
+                        {selectedSubmission.budget && (
+                          <p className="text-sm"><span className="font-medium">Budget:</span> {selectedSubmission.budget}</p>
+                        )}
+                        {selectedSubmission.timeline && (
+                          <p className="text-sm"><span className="font-medium">Timeline:</span> {selectedSubmission.timeline}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subject */}
+                  <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                    <h4 className="font-semibold text-slate-800 dark:text-white mb-2">Subject</h4>
+                    <p className="text-slate-600 dark:text-slate-300">{selectedSubmission.subject}</p>
+                  </div>
+
+                  {/* Message */}
+                  <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                    <h4 className="font-semibold text-slate-800 dark:text-white mb-2">Message</h4>
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                      <p className="text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                        {selectedSubmission.message}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Timestamp */}
+                  <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                    <div className="flex items-center space-x-2 text-sm text-slate-500">
+                      <Calendar className="w-4 h-4" />
+                      <span>Submitted on {new Date(selectedSubmission.submittedAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+                    <button
+                      onClick={() => window.open(`mailto:${selectedSubmission.email}?subject=Re: ${selectedSubmission.subject}`, '_blank')}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span>Reply via Email</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </button>
+                    
+                    {selectedSubmission.phone && (
+                      <button
+                        onClick={() => window.open(`tel:${selectedSubmission.phone}`, '_blank')}
+                        className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200"
+                      >
+                        <Phone className="w-4 h-4" />
+                        <span>Call Now</span>
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-slate-200/50 dark:border-slate-700/50">
-            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Quick Actions</h3>
-            <div className="space-y-3">
-              <Button className="w-full justify-start" variant="ghost">
-                <Mail className="w-4 h-4 mr-3" />
-                View Messages
-              </Button>
-              <Button className="w-full justify-start" variant="ghost">
-                <Download className="w-4 h-4 mr-3" />
-                Export Data
-              </Button>
-              <Button className="w-full justify-start" variant="ghost">
-                <Settings className="w-4 h-4 mr-3" />
-                Site Settings
-              </Button>
-              <Button className="w-full justify-start" variant="ghost">
-                <BarChart3 className="w-4 h-4 mr-3" />
-                Analytics
-              </Button>
-              <Button className="w-full justify-start" variant="ghost" onClick={handleGoHome}>
-                <Eye className="w-4 h-4 mr-3" />
-                Preview Site
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Admin Info */}
-        <div className="mt-8 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-slate-200/50 dark:border-slate-700/50">
-          <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Session Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Username</p>
-              <p className="font-semibold text-slate-800 dark:text-white">{adminInfo?.username || 'admin'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Login Time</p>
-              <p className="font-semibold text-slate-800 dark:text-white">
-                {adminInfo?.loginTime ? new Date(adminInfo.loginTime).toLocaleString() : 'N/A'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Role</p>
-              <p className="font-semibold text-slate-800 dark:text-white">{adminInfo?.role || 'Administrator'}</p>
-            </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Select a submission to view details</p>
+              </div>
+            )}
           </div>
         </div>
       </main>
