@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ContactService } from '../services/contactService';
 import { 
   Mail, 
   Phone, 
@@ -23,7 +24,6 @@ import {
   Download,
   ExternalLink
 } from "lucide-react";
-import { contactStorage } from '../utils/contactStorage';
 
 interface ContactFormData {
   name: string;
@@ -136,11 +136,20 @@ const ContactSection = () => {
     setSubmitStatus("submitting");
     
     try {
-      // Save to local storage
-      const submission = contactStorage.saveSubmission(formData);
+      // Submit to Supabase database
+      const submission = await ContactService.submitContactForm({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+        subject: formData.subject,
+        message: formData.message,
+        budget: formData.budget,
+        timeline: formData.timeline,
+        project_type: formData.projectType
+      });
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Form submitted successfully:', submission);
       
       setSubmitStatus("success");
       setSubmitMessage("🎉 Message sent successfully! I'll get back to you within 24 hours.");
@@ -166,7 +175,7 @@ const ContactSection = () => {
     } catch (error) {
       console.error("Form submission failed:", error);
       setSubmitStatus("error");
-      setSubmitMessage("❌ Failed to send message. Please try again or email me directly at team66415@gmail.com");
+      setSubmitMessage(`❌ Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again or email me directly at team66415@gmail.com`);
     }
   };
 

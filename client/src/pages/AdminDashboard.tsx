@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ContactService } from '../services/contactService';
+import { ContactSubmission, ContactStats } from '../lib/supabase';
 import { 
   LogOut, 
   Shield, 
@@ -25,24 +27,17 @@ import {
   Filter,
   ExternalLink
 } from "lucide-react";
-import { contactStorage } from '../utils/contactStorage';
-import { ContactSubmission, ContactStats } from '../types/contact';
 
 const AdminDashboard = () => {
   const [adminInfo, setAdminInfo] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
-  const [stats, setStats] = useState<ContactStats>({
-    total: 0,
-    new: 0,
-    read: 0,
-    replied: 0,
-    todayCount: 0,
-    weekCount: 0
-  });
+  const [stats, setStats] = useState<ContactStats | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'read' | 'replied'>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,19 +56,41 @@ const AdminDashboard = () => {
     // Load contact data
     loadContactData();
 
+    // Subscribe to real-time changes
+    const subscription = ContactService.subscribeToChanges((payload) => {
+      console.log('Real-time update:', payload);
+      loadContactData(); // Reload data when changes occur
+    });
+
     // Update time every second
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const loadContactData = () => {
-    const allSubmissions = contactStorage.getAllSubmissions();
-    const contactStats = contactStorage.getStats();
-    setSubmissions(allSubmissions);
-    setStats(contactStats);
+  const loadContactData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [allSubmissions, contactStats] = await Promise.all([
+        ContactService.getAllSubmissions(),
+        ContactService.getStats()
+      ]);
+      
+      setSubmissions(allSubmissions);
+      setStats(contactStats);
+    } catch (err) {
+      console.error('Error loading contact data:', err);
+      setError('Failed to load contact data');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {
@@ -85,20 +102,30 @@ const AdminDashboard = () => {
     navigate("/");
   };
 
-  const handleStatusChange = (id: string, status: ContactSubmission['status']) => {
-    contactStorage.updateSubmissionStatus(id, status);
-    loadContactData();
-    if (selectedSubmission && selectedSubmission.id === id) {
-      setSelectedSubmission({ ...selectedSubmission, status });
+  const handleStatusChange = async (id: string, status: ContactSubmission['status']) => {
+    try {
+      await ContactService.updateSubmissionStatus(id, status);
+      await loadContactData();
+      if (selectedSubmission && selectedSubmission.id === id) {
+        setSelectedSubmission({ ...selectedSubmission, status });
+      }
+    } catch (err) {
+      console.error('Error updating status:', err);
+      alert('Failed to update status');
     }
   };
 
-  const handleDeleteSubmission = (id: string) => {
+  const handleDeleteSubmission = async (id: string) => {
     if (confirm('Are you sure you want to delete this submission?')) {
-      contactStorage.deleteSubmission(id);
-      loadContactData();
-      if (selectedSubmission && selectedSubmission.id === id) {
-        setSelectedSubmission(null);
+      try {
+        await ContactService.deleteSubmission(id);
+        await loadContactData();
+        if (selectedSubmission && selectedSubmission.id === id) {
+          setSelectedSubmission(null);
+        }
+      } catch (err) {
+        console.error('Error deleting submission:', err);
+        alert('Failed to delete submission');
       }
     }
   };
@@ -131,12 +158,12 @@ const AdminDashboard = () => {
     }
   };
 
-  const statsCards = [
+  const statsCards = stats ? [
     { icon: MessageSquare, label: "Total Messages", value: stats.total.toString(), change: `+${stats.todayCount} today`, color: "text-blue-600" },
     { icon: AlertCircle, label: "New Messages", value: stats.new.toString(), change: "Unread", color: "text-orange-600" },
     { icon: Eye, label: "Read Messages", value: stats.read.toString(), change: "Processed", color: "text-yellow-600" },
     { icon: CheckCircle, label: "Replied", value: stats.replied.toString(), change: "Completed", color: "text-green-600" }
-  ];
+  ] : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900">
@@ -168,7 +195,7 @@ const AdminDashboard = () => {
               {/* Notifications */}
               <button className="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors duration-200">
                 <Bell className="w-5 h-5" />
-                {stats.new > 0 && (
+                {stats && stats.new > 0 && (
                   <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                     {stats.new}
                   </div>
@@ -218,6 +245,25 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Grid */}
+        {loading && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-2 text-slate-600 dark:text-slate-300">Loading...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-8">
+            <p className="text-red-700 dark:text-red-400">{error}</p>
+            <button 
+              onClick={loadContactData}
+              className="mt-2 text-red-600 dark:text-red-400 hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statsCards.map((stat, index) => {
             const Icon = stat.icon;
@@ -318,7 +364,7 @@ const AdminDashboard = () => {
                             {submission.subject}
                           </p>
                           <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-                            {new Date(submission.submittedAt).toLocaleString()}
+                            {new Date(submission.created_at).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -410,12 +456,12 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Project Details */}
-                  {(selectedSubmission.projectType || selectedSubmission.budget || selectedSubmission.timeline) && (
+                  {(selectedSubmission.project_type || selectedSubmission.budget || selectedSubmission.timeline) && (
                     <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                       <h4 className="font-semibold text-slate-800 dark:text-white mb-3">Project Details</h4>
                       <div className="space-y-2">
-                        {selectedSubmission.projectType && (
-                          <p className="text-sm"><span className="font-medium">Type:</span> {selectedSubmission.projectType}</p>
+                        {selectedSubmission.project_type && (
+                          <p className="text-sm"><span className="font-medium">Type:</span> {selectedSubmission.project_type}</p>
                         )}
                         {selectedSubmission.budget && (
                           <p className="text-sm"><span className="font-medium">Budget:</span> {selectedSubmission.budget}</p>
@@ -447,7 +493,7 @@ const AdminDashboard = () => {
                   <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                     <div className="flex items-center space-x-2 text-sm text-slate-500">
                       <Calendar className="w-4 h-4" />
-                      <span>Submitted on {new Date(selectedSubmission.submittedAt).toLocaleString()}</span>
+                      <span>Submitted on {new Date(selectedSubmission.created_at).toLocaleString()}</span>
                     </div>
                   </div>
 
