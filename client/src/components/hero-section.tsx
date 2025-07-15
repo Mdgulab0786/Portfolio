@@ -163,7 +163,7 @@ const HeroSection = () => {
                 <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Available for new opportunities</span>
               </div>
               <h1 className="text-6xl lg:text-7xl font-bold text-slate-800 dark:text-white mb-4 leading-tight">
-                Hi, I'm{" "}
+                Hi, I' m{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 animate-pulse">
                   Md Gulab
                 </span>

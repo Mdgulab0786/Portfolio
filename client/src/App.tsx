@@ -33,7 +33,7 @@ function App() {
                   <SkillsSection />
                   <ProjectsSection />
                   <CertificationsSection />
-                  <ContactSection />n
+                  <ContactSection />
                   <Footer />
                 </main>
               }
