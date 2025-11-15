@@ -3,21 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, User, MessageCircle, Calendar, Search, RefreshCw } from "lucide-react";
+import {
+  Mail,
+  User,
+  MessageCircle,
+  Calendar,
+  Search,
+  RefreshCw,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Contact {
-  _id: string;
-  name: string;
-  email: string;
-  message: string;
-  createdAt: string;
-}
+import { ContactService } from "@/services/contactService";
+import type { ContactSubmission } from "@/lib/supabase";
 
 const AdminPanel = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<ContactSubmission[]>([]);
+  const [filteredContacts, setFilteredContacts] = useState<ContactSubmission[]>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -25,24 +28,13 @@ const AdminPanel = () => {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("adminToken");
-      if (!token) throw new Error("Unauthorized");
-
-      const res = await fetch("http://localhost:5000/api/contact", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("Failed to fetch contacts");
-
-      const data: Contact[] = await res.json();
+      const data = await ContactService.getAllSubmissions();
       setContacts(data);
     } catch (error: any) {
       console.error("Fetch error:", error);
       toast({
         title: "Error",
-        description: error.message || "Something went wrong",
+        description: error.message || "Failed to fetch contact submissions",
         variant: "destructive",
       });
     } finally {
@@ -52,13 +44,25 @@ const AdminPanel = () => {
 
   useEffect(() => {
     loadContacts();
+
+    // Subscribe to realtime changes (insert/update/delete)
+    const subscription = ContactService.subscribeToChanges(() => {
+      loadContacts();
+    });
+
+    return () => {
+      try {
+        subscription.unsubscribe?.();
+      } catch {}
+    };
   }, []);
 
   useEffect(() => {
-    const filtered = contacts.filter((contact) =>
-      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.message.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = contacts.filter(
+      (contact) =>
+        contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.message.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredContacts(filtered);
   }, [contacts, searchTerm]);
@@ -99,12 +103,14 @@ const AdminPanel = () => {
 
   const getWeeklyContacts = () => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    return contacts.filter((contact) => new Date(contact.createdAt) > weekAgo);
+    return contacts.filter((contact) => new Date(contact.created_at) > weekAgo);
   };
 
   const getTodayContacts = () => {
     const today = new Date().toDateString();
-    return contacts.filter((contact) => new Date(contact.createdAt).toDateString() === today);
+    return contacts.filter(
+      (contact) => new Date(contact.created_at).toDateString() === today
+    );
   };
 
   if (isLoading) {
@@ -112,7 +118,9 @@ const AdminPanel = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading contacts...</p>
+          <p className="text-gray-600 dark:text-gray-300">
+            Loading contacts...
+          </p>
         </div>
       </div>
     );
@@ -125,13 +133,17 @@ const AdminPanel = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Contact Messages *
+                Contact Messages
               </h1>
               <p className="text-gray-600 dark:text-gray-300">
-                Manage and view all contact form submissions
+                Manage and view all contact form submissions (live)
               </p>
             </div>
-            <Button onClick={refreshContacts} variant="outline" className="flex items-center gap-2">
+            <Button
+              onClick={refreshContacts}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
               <RefreshCw className="w-4 h-4" />
               Refresh
             </Button>
@@ -143,8 +155,12 @@ const AdminPanel = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Messages</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{contacts.length}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Total Messages
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {contacts.length}
+                  </p>
                 </div>
                 <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-full">
                   <MessageCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -157,8 +173,12 @@ const AdminPanel = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">This Week</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{getWeeklyContacts().length}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    This Week
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {getWeeklyContacts().length}
+                  </p>
                 </div>
                 <div className="bg-green-100 dark:bg-green-900 p-3 rounded-full">
                   <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -171,8 +191,12 @@ const AdminPanel = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Today</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{getTodayContacts().length}</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Today
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                    {getTodayContacts().length}
+                  </p>
                 </div>
                 <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-full">
                   <User className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -211,7 +235,10 @@ const AdminPanel = () => {
             </Card>
           ) : (
             filteredContacts.map((contact) => (
-              <Card key={contact._id} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500">
+              <Card
+                key={contact.id}
+                className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500"
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -235,13 +262,15 @@ const AdminPanel = () => {
                     </div>
                     <div className="text-right">
                       <Badge variant="secondary" className="mb-2">
-                        {formatDate(contact.createdAt)}
+                        {formatDate(contact.created_at)}
                       </Badge>
                       <div className="flex space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`mailto:${contact.email}`, "_blank")}
+                          onClick={() =>
+                            window.open(`mailto:${contact.email}`, "_blank")
+                          }
                           className="flex items-center gap-1"
                         >
                           <Mail className="w-4 h-4" />

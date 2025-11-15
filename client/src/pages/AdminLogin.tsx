@@ -2,22 +2,25 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Lock, User, Eye, EyeOff, Shield, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Shield,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const AdminLogin = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
-
-  // Demo credentials for testing (remove in production)
-  const DEMO_CREDENTIALS = {
-    username: "gulab",
-    password: "20180182245"
-  };
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -26,52 +29,23 @@ const AdminLogin = () => {
 
     try {
       // Validation
-      if (!username || !password) {
-        throw new Error("Please enter both username and password");
+      if (!email || !password) {
+        throw new Error("Please enter both email and password");
       }
 
-      // Demo login (replace with actual API call)
-      if (username === DEMO_CREDENTIALS.username && password === DEMO_CREDENTIALS.password) {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Generate demo token
-        const demoToken = btoa(JSON.stringify({
-          username,
-          loginTime: Date.now(),
-          role: "admin"
-        }));
-
-        localStorage.setItem("adminToken", demoToken);
-        setSuccess("Login successful! Redirecting...");
-        
-        setTimeout(() => {
-          navigate("/admin/dashboard");
-        }, 1500);
-      } else {
-        throw new Error("Invalid username or password");
-      }
-
-      /* 
-      // Uncomment this for actual backend API call
-      const res = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      const data = await res.json();
+      if (authError) {
+        throw new Error(authError.message);
+      }
 
-      if (!res.ok) throw new Error(data.error || "Login failed");
-
-      localStorage.setItem("adminToken", data.token);
       setSuccess("Login successful! Redirecting...");
-      
       setTimeout(() => {
         navigate("/admin/dashboard");
-      }, 1500);
-      */
-
+      }, 800);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -80,7 +54,7 @@ const AdminLogin = () => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleLogin();
     }
   };
@@ -99,17 +73,21 @@ const AdminLogin = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl mb-4 shadow-lg">
             <Shield className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">Admin Login</h2>
-          <p className="text-slate-600 dark:text-slate-300">Access the admin dashboard</p>
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+            Admin Login
+          </h2>
+          <p className="text-slate-600 dark:text-slate-300">
+            Access the admin dashboard
+          </p>
         </div>
-
-     
 
         {/* Error Message */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl flex items-center">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-3" />
-            <span className="text-red-700 dark:text-red-300 text-sm">{error}</span>
+            <span className="text-red-700 dark:text-red-300 text-sm">
+              {error}
+            </span>
           </div>
         )}
 
@@ -117,7 +95,9 @@ const AdminLogin = () => {
         {success && (
           <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-xl flex items-center">
             <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mr-3" />
-            <span className="text-green-700 dark:text-green-300 text-sm">{success}</span>
+            <span className="text-green-700 dark:text-green-300 text-sm">
+              {success}
+            </span>
           </div>
         )}
 
@@ -126,14 +106,15 @@ const AdminLogin = () => {
           {/* Username Field */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Username
+              Email
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               <Input
-                placeholder="Enter username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="you@example.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 onKeyPress={handleKeyPress}
                 className="pl-10 h-12 border-2 border-slate-200 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 rounded-xl bg-slate-50 dark:bg-slate-700"
                 disabled={isLoading}
@@ -163,13 +144,17 @@ const AdminLogin = () => {
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                 disabled={isLoading}
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
 
           {/* Login Button */}
-          <Button 
+          <Button
             className="w-full h-12 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             onClick={handleLogin}
             disabled={isLoading}

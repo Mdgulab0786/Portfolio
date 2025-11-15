@@ -1,6 +1,6 @@
 # Portfolio Website
 
-A modern, responsive personal portfolio website built with React, TypeScript, and PostgreSQL.
+A modern, responsive personal portfolio website built with React, TypeScript, Tailwind, and Supabase (Postgres) for contact submissions.
 
 ## Features
 
@@ -9,7 +9,7 @@ A modern, responsive personal portfolio website built with React, TypeScript, an
 - 💅 Styled with Tailwind CSS and Radix UI components
 - 📱 Mobile-first responsive design
 - ⚡ Fast development with Vite
-- 🗄️ PostgreSQL database with Drizzle ORM
+- 🗄️ Supabase (PostgreSQL) for contact form storage
 - 📧 Working contact form with database storage
 - 🎭 Smooth animations and transitions
 - 🌙 Dark/light theme toggle
@@ -17,6 +17,7 @@ A modern, responsive personal portfolio website built with React, TypeScript, an
 ## Tech Stack
 
 ### Frontend
+
 - React 18 with TypeScript
 - Tailwind CSS for styling
 - Radix UI for accessible components
@@ -24,101 +25,100 @@ A modern, responsive personal portfolio website built with React, TypeScript, an
 - React Query for state management
 - Wouter for routing
 
-### Backend
-- Node.js with Express
-- PostgreSQL database
-- Drizzle ORM
-- Zod for validation
-- TypeScript
+### Data layer
+
+- Supabase (PostgreSQL)
+- Row Level Security (RLS) policies for safe public inserts
 
 ### Development
+
 - Vite for build tooling
-- ESBuild for server bundling
-- Drizzle Kit for database migrations
+- Tailwind CSS + Shadcn UI
 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18 or higher
 - PostgreSQL database (or use the provided Neon database)
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <your-repo-url>
 cd portfolio-website
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Set up environment variables:
-```bash
-# Copy the example env file
-cp .env.example .env
 
-# Add your database URL
-DATABASE_URL=your_postgresql_connection_string
+```bash
+# Copy the example env file (Windows)
+copy .env.example .env
+
+# Add your Supabase credentials to .env (used by Vite as VITE_*)
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-4. Push database schema:
-```bash
-npm run db:push
-```
+4. Start the development server:
 
-5. Start the development server:
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5000`
+The application will be available at `http://localhost:5173` (Vite default)
 
 ## Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run check` - Run TypeScript checks
-- `npm run db:push` - Push database schema changes
+- `npm run preview` or `npm start` - Preview the production build locally
 
 ## Project Structure
 
 ```
-├── client/              # Frontend React application
-│   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── hooks/       # Custom React hooks
-│   │   ├── lib/         # Utility functions
-│   │   ├── pages/       # Page components
-│   │   └── index.css    # Global styles
-│   └── index.html       # HTML template
-├── server/              # Backend Express application
-│   ├── db.ts           # Database connection
-│   ├── routes.ts       # API routes
-│   ├── storage.ts      # Data access layer
-│   └── index.ts        # Server entry point
-├── shared/              # Shared types and schemas
-│   └── schema.ts       # Database schema definitions
-└── package.json        # Dependencies and scripts
+├── client/                 # React app (Vite root)
+│   ├── public/             # Static assets (copied as-is)
+│   └── src/
+│       ├── components/     # UI components
+│       ├── hooks/          # Custom React hooks
+│       ├── lib/            # Supabase client, utilities
+│       ├── pages/          # Route components
+│       └── index.css       # Tailwind base/styles
+├── supabase/               # Optional SQL migrations for Supabase
+├── netlify.toml            # Netlify SPA config
+├── vite.config.ts          # Vite config (root=client, outDir=dist)
+└── package.json            # Scripts and dependencies
 ```
 
 ## Deployment
 
-### Vercel (Recommended)
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Add your `DATABASE_URL` environment variable
-4. Deploy!
+### Netlify (Recommended)
 
-### Netlify
-1. Build the project: `npm run build`
-2. Deploy the `dist/public` folder to Netlify
-3. Set up environment variables for the API
+1. Push your code to GitHub
+2. Connect your repository to Netlify
+3. Build command: `npm run build`
+4. Publish directory: `dist`
+5. Add env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+
+### Vercel
+
+If you prefer Vercel for static hosting:
+
+- Build command: `npm run build`
+- Output directory: `dist`
+- Add env vars as above
 
 ### Railway/Render
+
 1. Connect your GitHub repository
 2. Add environment variables
 3. Use the start script: `npm run start`
@@ -126,25 +126,28 @@ The application will be available at `http://localhost:5000`
 ## Environment Variables
 
 ```bash
-DATABASE_URL=your_postgresql_connection_string
-NODE_ENV=production
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ## Features Overview
 
 ### Contact Form
-- Form validation on client and server
-- Stores submissions in PostgreSQL database
+
+- Client-side validation
+- Stores submissions in Supabase (Postgres)
+- Real-time updates for Admin dashboard
 - Toast notifications for user feedback
-- Email validation
 
 ### Theme System
+
 - Automatic system theme detection
 - Manual light/dark mode toggle
 - Consistent theme across all components
 - CSS variables for easy customization
 
 ### Responsive Design
+
 - Mobile-first approach
 - Smooth scrolling navigation
 - Animated skill progress bars

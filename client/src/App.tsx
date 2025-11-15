@@ -2,42 +2,21 @@ import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { ThemeProvider } from "@/components/theme-provider";
-import Navigation from "@/components/navigation";
-import HeroSection from "@/components/hero-section";
-import AboutSection from "@/components/about-section";
-import SkillsSection from "./components/skills-section";
-import ProjectsSection from "./components/projects-section";
-import CertificationsSection from "@/components/certifications-section";
-import ContactSection from "@/components/contact-section";
-import Footer from "@/components/footer";
-
+import Home from "./pages/home";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AdminLayout } from "@/layouts";
+import NotFound from "./pages/not-found";
 
 function App() {
   return (
     <BrowserRouter>
-      <ThemeProvider defaultTheme="light" storageKey="portfolio-theme">
-        <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
-          <Navigation />
-          
+      <ThemeProvider defaultTheme="dark" storageKey="portfolio-theme">
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
           <Routes>
             {/* Home Page */}
-            <Route
-              path="/"
-              element={
-                <main className="flex-1">
-                  <HeroSection />
-                  <AboutSection />
-                  <SkillsSection />
-                  <ProjectsSection />
-                  <CertificationsSection />
-                  <ContactSection />
-                  <Footer />
-                </main>
-              }
-            />
+            <Route path="/" element={<Home />} />
 
             {/* Admin Login Page */}
             <Route path="/admin" element={<AdminLogin />} />
@@ -47,10 +26,15 @@ function App() {
               path="/admin/dashboard"
               element={
                 <ProtectedRoute>
-                  <AdminDashboard />
+                  <AdminLayout>
+                    <AdminDashboard />
+                  </AdminLayout>
                 </ProtectedRoute>
               }
             />
+
+            {/* 404 Page */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
       </ThemeProvider>

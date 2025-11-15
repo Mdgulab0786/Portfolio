@@ -1,37 +1,33 @@
 # Deployment Guide
 
-This guide covers multiple deployment options for your portfolio website.
+This guide focuses on a clean static deployment with Netlify (or Vercel) and Supabase as the data layer.
 
 ## 🚀 Quick Deploy Options
 
-### 1. Vercel (Recommended - Easiest)
+### 1. Netlify (Recommended - Easiest)
 
-1. **Push to GitHub** (if not already done):
+1. Push to GitHub (if not already done):
+
    ```bash
    git add .
    git commit -m "Initial commit"
    git push origin main
    ```
 
-2. **Deploy to Vercel**:
-   - Go to [vercel.com](https://vercel.com)
-   - Sign up with your GitHub account
-   - Click "New Project"
-   - Import your repository
-   - Add environment variable: `DATABASE_URL`
-   - Deploy!
-
-### 2. Netlify
-
-1. **Build the project**:
-   ```bash
-   npm run build
-   ```
-
-2. **Deploy**:
+2. Deploy to Netlify:
    - Go to [netlify.com](https://netlify.com)
-   - Drag and drop the `dist/public` folder
-   - Or connect your GitHub repository
+   - New site from Git → connect your repository
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+   - Environment variables:
+     - `VITE_SUPABASE_URL`
+     - `VITE_SUPABASE_ANON_KEY`
+
+### 2. Vercel
+
+1. Build the project: `npm run build`
+2. Output directory: `dist`
+3. Connect GitHub repo on Vercel and set env vars above
 
 ### 3. Railway
 
@@ -43,30 +39,17 @@ This guide covers multiple deployment options for your portfolio website.
 
 ### 4. Render
 
-1. **Deploy**:
-   - Go to [render.com](https://render.com)
-   - Connect your GitHub repository
-   - Use the `render.yaml` configuration
-   - Add environment variables
+Not required for static hosting. If you add a custom Node API later, configure separately.
 
 ## 🛠️ Manual GitHub Setup
 
 If you need to set up GitHub manually:
 
 ```bash
-# Initialize git (if not already done)
 git init
-
-# Add all files
 git add .
-
-# Commit changes
 git commit -m "Initial portfolio website commit"
-
-# Add your GitHub repository as remote
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-
-# Push to GitHub
 git push -u origin main
 ```
 
@@ -75,63 +58,48 @@ git push -u origin main
 For any deployment platform, you'll need these environment variables:
 
 ```bash
-DATABASE_URL=your_postgresql_connection_string
-NODE_ENV=production
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### Getting a Database URL
 
-**Option 1: Use Neon (Free)**
-1. Go to [neon.tech](https://neon.tech)
-2. Create a free account
-3. Create a new project
-4. Copy the connection string
+**Option 1: Use Supabase (Free)**
 
-**Option 2: Use Supabase (Free)**
 1. Go to [supabase.com](https://supabase.com)
 2. Create a new project
-3. Go to Settings → Database
-4. Copy the connection string
+3. Go to Project Settings → API
+4. Copy the Project URL and anon key
 
-**Option 3: Use PlanetScale (Free)**
-1. Go to [planetscale.com](https://planetscale.com)
-2. Create a database
-3. Get the connection string
+Optionally, use the SQL in `supabase/migrations/*.sql` to set up the contact_submissions table and RLS policies.
 
 ## 📝 Platform-Specific Instructions
 
-### Vercel Setup
-1. Install Vercel CLI: `npm i -g vercel`
-2. Login: `vercel login`
-3. Deploy: `vercel --prod`
+### Local preview
 
-### Netlify Setup
-1. Install Netlify CLI: `npm i -g netlify-cli`
+1. Build: `npm run build`
+2. Preview: `npm start`
+
+### Netlify CLI (optional)
+
+1. Install: `npm i -g netlify-cli`
 2. Login: `netlify login`
-3. Deploy: `netlify deploy --prod --dir=dist/public`
+3. Deploy: `netlify deploy --prod --dir=dist`
 
 ### Railway Setup
+
 1. Install Railway CLI: `npm i -g @railway/cli`
 2. Login: `railway login`
 3. Deploy: `railway up`
 
 ## 🔄 Automated Deployment
 
-The repository includes GitHub Actions workflow that automatically:
-- Runs TypeScript checks
-- Builds the project
-- Deploys to Vercel (when configured)
-
-To enable automated deployment:
-1. Add these secrets to your GitHub repository:
-   - `VERCEL_TOKEN`
-   - `VERCEL_ORG_ID`
-   - `VERCEL_PROJECT_ID`
-   - `DATABASE_URL`
+You can add CI later to run type checks and build automatically.
 
 ## 🐛 Troubleshooting
 
 ### Build Errors
+
 ```bash
 # Clear cache and reinstall
 rm -rf node_modules package-lock.json
@@ -140,18 +108,19 @@ npm run build
 ```
 
 ### Database Connection Issues
-- Ensure `DATABASE_URL` is correctly set
-- Check database is accessible from deployment platform
-- Verify database credentials
+
+- Ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set in your deploy environment
+- Verify Supabase policies allow the required operations
 
 ### Port Issues
+
 - Most platforms automatically assign ports
-- The app binds to `0.0.0.0:5000` by default
-- Environment variable `PORT` will override if needed
+  This is a static SPA; Vite preview runs on localhost only. Hosting provider handles ports.
 
 ## 📊 Post-Deployment
 
 After successful deployment:
+
 1. Test the contact form
 2. Verify dark/light mode toggle
 3. Check mobile responsiveness
@@ -161,6 +130,7 @@ After successful deployment:
 ## 🔗 Custom Domain
 
 To add a custom domain:
+
 1. **Vercel**: Project Settings → Domains
 2. **Netlify**: Site Settings → Domain Management
 3. **Railway**: Project Settings → Domains
@@ -169,6 +139,7 @@ To add a custom domain:
 ## 📈 Analytics (Optional)
 
 Add analytics to track visitors:
+
 1. **Google Analytics**: Add tracking code to `index.html`
 2. **Vercel Analytics**: Enable in project settings
 3. **Netlify Analytics**: Enable in site settings
@@ -176,6 +147,7 @@ Add analytics to track visitors:
 ## 🔒 Security Headers
 
 The deployment includes basic security configurations. For production:
+
 - Enable HTTPS (automatic on most platforms)
 - Set up proper CORS headers
 - Configure CSP headers if needed
@@ -183,6 +155,7 @@ The deployment includes basic security configurations. For production:
 ## 📱 Performance
 
 The website is optimized for performance:
+
 - Static assets are cached
 - Images are optimized
 - CSS and JS are minified

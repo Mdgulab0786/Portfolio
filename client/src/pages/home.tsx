@@ -1,22 +1,27 @@
-import Navigation from "@/components/navigation";
-import HeroSection from "@/components/hero-section";
-import AboutSection from "@/components/about-section";
-import SkillsSection from "@/components/skills-section";
-import ProjectsSection from "@/components/projects-section";
-import ContactSection from "@/components/contact-section";
-import Footer from "@/components/footer";
+import {
+  HeroSection,
+  AboutSection,
+  SkillsSection,
+  ProjectsSection,
+  CertificationsSection,
+  ContactSection,
+  TestimonialsSection,
+  ResumeSection,
+} from "@/features";
+import { MainLayout } from "@/layouts";
 
 const Home = () => {
   return (
-    <div className="min-h-screen">
-      <Navigation />
+    <MainLayout>
       <HeroSection />
       <AboutSection />
       <SkillsSection />
       <ProjectsSection />
+      <CertificationsSection />
+      <TestimonialsSection />
+      <ResumeSection />
       <ContactSection />
-      <Footer />
-    </div>
+    </MainLayout>
   );
 };
 
