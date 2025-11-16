@@ -22,6 +22,7 @@ ENV NODE_ENV=production
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/server/dist ./server/dist
 COPY --from=build /app/server/package.json ./server/package.json
+COPY --from=build /app/server/package-lock.json ./server/package-lock.json
 
 # Install only server production deps
 RUN npm --prefix server ci --omit=dev
