@@ -1,4 +1,11 @@
-import { supabase, ContactSubmission, ContactStats } from '../lib/supabase';
+import type { Contact } from "@/types/contact";
+
+// In unified deploy, omit VITE_API_BASE_URL to use same-origin relative routes
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const authHeader = () => {
+  const token = localStorage.getItem("adminToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export class ContactService {
   // Submit a new contact form
@@ -12,128 +19,99 @@ export class ContactService {
     budget?: string;
     timeline?: string;
     project_type?: string;
-  }): Promise<ContactSubmission> {
-    console.log('Submitting contact form with data:', data);
-    
-    const { data: submission, error } = await supabase
-      .from('contact_submissions')
-      .insert([{
-        name: data.name,
-        email: data.email,
-        phone: data.phone || null,
-        company: data.company || null,
-        subject: data.subject,
-        message: data.message,
-        budget: data.budget || null,
-        timeline: data.timeline || null,
-        project_type: data.project_type || null,
-        status: 'new'
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error submitting contact form:', {
-        error,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      throw new Error(`Database error: ${error.message}`);
+  }): Promise<Contact> {
+    const res = await fetch(`${API_BASE}/api/contacts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Failed to submit contact");
     }
-
-    if (!submission) {
-      throw new Error('No data returned from database');
-    }
-
-    console.log('Contact form submitted successfully:', submission);
-    return submission;
+    const json = await res.json();
+    const mapped: Contact = {
+      id: json._id || json.id,
+      name: json.name,
+      email: json.email,
+      phone: json.phone,
+      company: json.company,
+      subject: json.subject,
+      message: json.message,
+      budget: json.budget,
+      timeline: json.timeline,
+      project_type: json.project_type,
+      status: json.status || "new",
+      created_at: json.createdAt || json.created_at || new Date().toISOString(),
+    };
+    return mapped;
   }
 
   // Get all contact submissions (admin only)
-  static async getAllSubmissions(): Promise<ContactSubmission[]> {
-    const { data, error } = await supabase
-      .from('contact_submissions')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching submissions:', error);
-      throw new Error('Failed to fetch submissions');
+  static async getAllSubmissions(): Promise<{
+    items: Contact[];
+    stats: { total: number; unread: number; read: number };
+  }> {
+    const res = await fetch(`${API_BASE}/api/contacts`, {
+      headers: { ...authHeader() },
+    });
+    if (!res.ok) {
+      throw new Error("Failed to fetch submissions");
     }
-
-    return data || [];
+    const json = await res.json();
+    const items: Contact[] = (json.items || []).map((d: any) => ({
+      id: d._id || d.id,
+      name: d.name,
+      email: d.email,
+      phone: d.phone,
+      company: d.company,
+      subject: d.subject,
+      message: d.message,
+      budget: d.budget,
+      timeline: d.timeline,
+      project_type: d.project_type,
+      status: d.status || "new",
+      created_at: d.createdAt || d.created_at,
+    }));
+    return { items, stats: json.stats };
   }
 
   // Update submission status
-  static async updateSubmissionStatus(id: string, status: 'new' | 'read' | 'replied'): Promise<void> {
-    const { error } = await supabase
-      .from('contact_submissions')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating submission status:', error);
-      throw new Error('Failed to update submission status');
+  static async updateSubmissionStatus(
+    id: string,
+    status: "new" | "read" | "replied"
+  ): Promise<void> {
+    if (status === "read") {
+      const res = await fetch(`${API_BASE}/api/contacts/${id}/read`, {
+        method: "PATCH",
+        headers: { ...authHeader() },
+      });
+      if (!res.ok) throw new Error("Failed to update submission status");
+    } else {
+      // only 'read' is supported on server; other statuses ignored for now
     }
   }
 
   // Delete a submission
   static async deleteSubmission(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('contact_submissions')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting submission:', error);
-      throw new Error('Failed to delete submission');
-    }
+    const res = await fetch(`${API_BASE}/api/contacts/${id}`, {
+      method: "DELETE",
+      headers: { ...authHeader() },
+    });
+    if (!res.ok) throw new Error("Failed to delete submission");
   }
 
   // Get contact statistics
-  static async getStats(): Promise<ContactStats> {
-    const { data, error } = await supabase
-      .from('contact_submissions')
-      .select('status, created_at');
-
-    if (error) {
-      console.error('Error fetching stats:', error);
-      throw new Error('Failed to fetch statistics');
-    }
-
-    const submissions = data || [];
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-    return {
-      total: submissions.length,
-      new: submissions.filter(sub => sub.status === 'new').length,
-      read: submissions.filter(sub => sub.status === 'read').length,
-      replied: submissions.filter(sub => sub.status === 'replied').length,
-      todayCount: submissions.filter(sub => 
-        new Date(sub.created_at) >= today
-      ).length,
-      weekCount: submissions.filter(sub => 
-        new Date(sub.created_at) >= weekAgo
-      ).length
-    };
+  static async getStats(): Promise<{
+    total: number;
+    unread: number;
+    read: number;
+  }> {
+    const { stats } = await this.getAllSubmissions();
+    return stats;
   }
-
-  // Subscribe to real-time changes (for admin dashboard)
-  static subscribeToChanges(callback: (payload: any) => void) {
-    return supabase
-      .channel('contact_submissions_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'contact_submissions' 
-        }, 
-        callback
-      )
-      .subscribe();
+  // No realtime with Mongo by default; left as no-op
+  static subscribeToChanges(_callback: (payload: any) => void) {
+    return { unsubscribe: () => {} } as any;
   }
 }

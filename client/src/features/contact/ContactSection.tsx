@@ -140,7 +140,7 @@ const ContactSection = () => {
     setSubmitStatus("submitting");
 
     try {
-      // Submit to Supabase database
+      // Submit to API (MongoDB via Express)
       const submission = await ContactService.submitContactForm({
         name: formData.name,
         email: formData.email,

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ContactService } from "../services/contactService";
-import { ContactSubmission, ContactStats } from "../lib/supabase";
-import { supabase } from "@/lib/supabase";
+import type { Contact as ContactSubmission } from "@/types/contact";
 import {
   LogOut,
   Shield,
@@ -33,7 +32,11 @@ const AdminDashboard = () => {
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
-  const [stats, setStats] = useState<ContactStats | null>(null);
+  const [stats, setStats] = useState<{
+    total: number;
+    unread: number;
+    read: number;
+  } | null>(null);
   const [selectedSubmission, setSelectedSubmission] =
     useState<ContactSubmission | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,23 +48,17 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Ensure user is authenticated via Supabase
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        navigate("/admin");
-      } else {
-        setAdminEmail(data.user.email ?? null);
-      }
-    });
+    // Verify JWT
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+      navigate("/admin");
+      return;
+    }
+    // Admin email is stored in token on server; we just show generic label here
+    setAdminEmail("Admin");
 
     // Load contact data
     loadContactData();
-
-    // Subscribe to real-time changes
-    const subscription = ContactService.subscribeToChanges((payload) => {
-      console.log("Real-time update:", payload);
-      loadContactData(); // Reload data when changes occur
-    });
 
     // Update time every second
     const timer = setInterval(() => {
@@ -70,7 +67,6 @@ const AdminDashboard = () => {
 
     return () => {
       clearInterval(timer);
-      subscription.unsubscribe();
     };
   }, []);
 
@@ -79,13 +75,9 @@ const AdminDashboard = () => {
       setLoading(true);
       setError(null);
 
-      const [allSubmissions, contactStats] = await Promise.all([
-        ContactService.getAllSubmissions(),
-        ContactService.getStats(),
-      ]);
-
-      setSubmissions(allSubmissions);
-      setStats(contactStats);
+      const { items, stats } = await ContactService.getAllSubmissions();
+      setSubmissions(items as any);
+      setStats(stats);
     } catch (err) {
       console.error("Error loading contact data:", err);
       setError("Failed to load contact data");
@@ -95,7 +87,7 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem("adminToken");
     navigate("/admin");
   };
 
@@ -178,14 +170,14 @@ const AdminDashboard = () => {
           icon: MessageSquare,
           label: "Total Messages",
           value: stats.total.toString(),
-          change: `+${stats.todayCount} today`,
+          change: "All",
           color: "text-blue-600",
         },
         {
           icon: AlertCircle,
-          label: "New Messages",
-          value: stats.new.toString(),
-          change: "Unread",
+          label: "Unread Messages",
+          value: stats.unread.toString(),
+          change: "Pending",
           color: "text-orange-600",
         },
         {
@@ -194,13 +186,6 @@ const AdminDashboard = () => {
           value: stats.read.toString(),
           change: "Processed",
           color: "text-yellow-600",
-        },
-        {
-          icon: CheckCircle,
-          label: "Replied",
-          value: stats.replied.toString(),
-          change: "Completed",
-          color: "text-green-600",
         },
       ]
     : [];
@@ -237,9 +222,9 @@ const AdminDashboard = () => {
               {/* Notifications */}
               <button className="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors duration-200">
                 <Bell className="w-5 h-5" />
-                {stats && stats.new > 0 && (
+                {stats && stats.unread > 0 && (
                   <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {stats.new}
+                    {stats.unread}
                   </div>
                 )}
               </button>

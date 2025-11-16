@@ -1,10 +1,10 @@
 # Deployment Guide
 
-This guide focuses on a clean static deployment with Netlify (or Vercel) and Supabase as the data layer.
+This guide shows a single-deploy setup where one Node app serves both the API and the built React app (no separate platforms).
 
 ## 🚀 Quick Deploy Options
 
-### 1. Netlify (Recommended - Easiest)
+### Option A: Render (single Web Service)
 
 1. Push to GitHub (if not already done):
 
@@ -14,32 +14,39 @@ This guide focuses on a clean static deployment with Netlify (or Vercel) and Sup
    git push origin main
    ```
 
-2. Deploy to Netlify:
-   - Go to [netlify.com](https://netlify.com)
-   - New site from Git → connect your repository
-   - Build command: `npm run build`
-   - Publish directory: `dist`
+2. Create a Web Service on [render.com](https://render.com) from this repo.
+   - Build Command: `npm run build:full`
+   - Start Command: `npm run start:server`
    - Environment variables:
-     - `VITE_SUPABASE_URL`
-     - `VITE_SUPABASE_ANON_KEY`
+     - `MONGODB_URI`
+     - `JWT_SECRET`
+     - `ADMIN_EMAIL`
+     - `ADMIN_PASSWORD_HASH`
+   - (Optional) `CLIENT_ORIGIN` not required since client is served by the same server
 
-### 2. Vercel
+### Option B: Railway (single service)
 
-1. Build the project: `npm run build`
-2. Output directory: `dist`
-3. Connect GitHub repo on Vercel and set env vars above
+1. Create a new service from GitHub on [Railway](https://railway.app)
+2. In service settings:
+   - Build: `npm run build:full`
+   - Start: `npm run start:server`
+   - Add env: `MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`
 
-### 3. Railway
+### Option C: Docker (any platform)
 
 1. **Connect GitHub**:
    - Go to [railway.app](https://railway.app)
    - Connect your GitHub repository
-   - Add `DATABASE_URL` environment variable
-   - Deploy automatically
+     Build and run the single container:
 
-### 4. Render
+```powershell
+docker build -t portfolio-unified .
+docker run -p 8080:8080 -e MONGODB_URI=YOUR_URI -e JWT_SECRET=YOUR_SECRET -e ADMIN_EMAIL=you@example.com -e ADMIN_PASSWORD_HASH=... portfolio-unified
+```
 
-Not required for static hosting. If you add a custom Node API later, configure separately.
+Visit: `http://localhost:8080`
+
+Note: The unified server serves the SPA from `/dist` and APIs from `/api/*`.
 
 ## 🛠️ Manual GitHub Setup
 
@@ -55,38 +62,38 @@ git push -u origin main
 
 ## 🔧 Environment Variables
 
-For any deployment platform, you'll need these environment variables:
+For the unified deploy, you only need server-side env:
 
 ```bash
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+MONGODB_URI=your_mongodb_atlas_uri
+JWT_SECRET=your_jwt_secret
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD_HASH=$2a$...
 ```
 
 ### Getting a Database URL
 
-**Option 1: Use Supabase (Free)**
+Provision MongoDB Atlas:
 
-1. Go to [supabase.com](https://supabase.com)
-2. Create a new project
-3. Go to Project Settings → API
-4. Copy the Project URL and anon key
-
-Optionally, use the SQL in `supabase/migrations/*.sql` to set up the contact_submissions table and RLS policies.
+1. Go to https://www.mongodb.com/atlas and create a free cluster
+2. Create a database and user; allow your server's IP (or 0.0.0.0/0 for testing)
+3. Set `MONGODB_URI` in the server environment
 
 ## 📝 Platform-Specific Instructions
 
-### Local preview
+### Local preview (unified)
 
-1. Build: `npm run build`
-2. Preview: `npm start`
+1. Build client + server: `npm run build:full`
+2. Start server (serves frontend and API): `npm run start:server`
+3. Open `http://localhost:4000`
 
-### Netlify CLI (optional)
+### Netlify CLI (optional, client)
 
 1. Install: `npm i -g netlify-cli`
 2. Login: `netlify login`
 3. Deploy: `netlify deploy --prod --dir=dist`
 
-### Railway Setup
+### Railway Setup (API)
 
 1. Install Railway CLI: `npm i -g @railway/cli`
 2. Login: `railway login`
@@ -107,10 +114,11 @@ npm install
 npm run build
 ```
 
-### Database Connection Issues
+### API/Database Connection Issues
 
-- Ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set in your deploy environment
-- Verify Supabase policies allow the required operations
+- Ensure the API has `MONGODB_URI`, `JWT_SECRET`, admin creds configured
+- Verify CORS `CLIENT_ORIGIN` matches your client domain
+- Confirm the client `VITE_API_BASE_URL` points to the API
 
 ### Port Issues
 

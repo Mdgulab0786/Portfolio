@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ContactService } from "@/services/contactService";
-import type { ContactSubmission } from "@/lib/supabase";
+import type { Contact as ContactSubmission } from "@/types/contact";
 
 const AdminPanel = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,8 +28,8 @@ const AdminPanel = () => {
     setIsLoading(true);
 
     try {
-      const data = await ContactService.getAllSubmissions();
-      setContacts(data);
+      const { items } = await ContactService.getAllSubmissions();
+      setContacts(items as any);
     } catch (error: any) {
       console.error("Fetch error:", error);
       toast({

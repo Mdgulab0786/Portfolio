@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { getSession } from "@/lib/supabase";
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const [loading, setLoading] = useState(true);
@@ -8,9 +9,22 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
   useEffect(() => {
     (async () => {
-      const session = await getSession();
-      setIsAuthed(!!session);
-      setLoading(false);
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        setIsAuthed(false);
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setIsAuthed(res.ok);
+      } catch {
+        setIsAuthed(false);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 

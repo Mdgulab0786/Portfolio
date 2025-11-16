@@ -11,7 +11,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -33,14 +33,17 @@ const AdminLogin = () => {
         throw new Error("Please enter both email and password");
       }
 
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-
-      if (authError) {
-        throw new Error(authError.message);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Invalid credentials");
       }
+      const { token } = await res.json();
+      localStorage.setItem("adminToken", token);
 
       setSuccess("Login successful! Redirecting...");
       setTimeout(() => {

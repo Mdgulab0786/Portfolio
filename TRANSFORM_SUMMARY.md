@@ -223,12 +223,12 @@ mkdir client/src/features/your-feature
 - 🧩 shadcn/ui
 - 🎭 Framer Motion
 - 🔄 React Query
-- 🗄️ Supabase
+- 🗄️ Express API + MongoDB Atlas
 - 📦 React Router v7
 
 ## 📚 Documentation
 
-- 📄 `README.md` - Project overview (needs update)
+- 📄 `README.md` - Project overview (updated for Express + MongoDB)
 - 📋 `FEATURES.md` - ⭐ NEW: Complete feature list
 - 🚀 `DEPLOYMENT.md` - Deployment guide
 - 📝 `RESUME_SETUP.md` - Resume setup instructions

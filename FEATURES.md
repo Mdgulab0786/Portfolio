@@ -77,7 +77,7 @@ This document provides a comprehensive overview of all features implemented in t
 
 - **Contact Form**: Name, Email, Subject, Message fields
 - **Form Validation**: Real-time error checking with Zod
-- **Supabase Integration**: Automatic database storage
+- **REST API + MongoDB**: Secure server-side storage
 - **Success Notifications**: Toast messages on submission
 - **Contact Information**: Email, phone, location
 - **Social Media Links**: Quick access to profiles
@@ -133,7 +133,7 @@ This document provides a comprehensive overview of all features implemented in t
 
 ### Authentication
 
-- **Supabase Auth**: Secure email/password login
+- **JWT Auth (Express)**: Secure email/password login
 - **Protected Routes**: Route guards for admin pages
 - **Session Management**: Persistent login sessions
 - **Logout Functionality**: Secure sign-out
@@ -183,7 +183,7 @@ This document provides a comprehensive overview of all features implemented in t
 
 ### Backend Security
 
-- **Row Level Security**: Supabase RLS policies
+- **Access Control**: JWT-protected admin endpoints
 - **API Rate Limiting**: Prevent abuse
 - **SQL Injection Protection**: Parameterized queries
 - **Authentication**: Secure user authentication
@@ -262,7 +262,7 @@ This document provides a comprehensive overview of all features implemented in t
 
 ### Current Integrations
 
-- **Supabase**: Database & Auth
+- **Express + MongoDB Atlas**: API & Database
 - **Netlify**: Hosting & CDN
 - **shadcn/ui**: UI Components
 - **Lucide Icons**: Icon library

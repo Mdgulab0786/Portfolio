@@ -1,6 +1,6 @@
 # Portfolio Website
 
-A modern, responsive personal portfolio website built with React, TypeScript, Tailwind, and Supabase (Postgres) for contact submissions.
+A modern, responsive personal portfolio website built with React, TypeScript, Tailwind, and an Express + MongoDB Atlas API for contact submissions.
 
 ## Features
 
@@ -9,7 +9,7 @@ A modern, responsive personal portfolio website built with React, TypeScript, Ta
 - 💅 Styled with Tailwind CSS and Radix UI components
 - 📱 Mobile-first responsive design
 - ⚡ Fast development with Vite
-- 🗄️ Supabase (PostgreSQL) for contact form storage
+- 🗄️ Express API + MongoDB Atlas for contact form storage
 - 📧 Working contact form with database storage
 - 🎭 Smooth animations and transitions
 - 🌙 Dark/light theme toggle
@@ -27,8 +27,8 @@ A modern, responsive personal portfolio website built with React, TypeScript, Ta
 
 ### Data layer
 
-- Supabase (PostgreSQL)
-- Row Level Security (RLS) policies for safe public inserts
+- Express (Node.js) REST API
+- MongoDB Atlas (via Mongoose)
 
 ### Development
 
@@ -40,7 +40,7 @@ A modern, responsive personal portfolio website built with React, TypeScript, Ta
 ### Prerequisites
 
 - Node.js 18 or higher
-- PostgreSQL database (or use the provided Neon database)
+- MongoDB Atlas cluster (free tier works)
 
 ### Installation
 
@@ -63,9 +63,13 @@ npm install
 # Copy the example env file (Windows)
 copy .env.example .env
 
-# Add your Supabase credentials to .env (used by Vite as VITE_*)
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Client env (Vite): set API base URL
+VITE_API_BASE_URL=http://localhost:4000
+
+# Then set up and run the API server (in ./server):
+# 1) cd server; npm install
+# 2) copy .env.example .env and fill MONGODB_URI, ADMIN creds, JWT_SECRET
+# 3) npm run dev
 ```
 
 4. Start the development server:
@@ -107,7 +111,7 @@ The application will be available at `http://localhost:5173` (Vite default)
 2. Connect your repository to Netlify
 3. Build command: `npm run build`
 4. Publish directory: `dist`
-5. Add env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+5. Add env var: `VITE_API_BASE_URL` (point to your API server)
 
 ### Vercel
 
@@ -126,8 +130,7 @@ If you prefer Vercel for static hosting:
 ## Environment Variables
 
 ```bash
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_BASE_URL=http://localhost:4000
 ```
 
 ## Features Overview
@@ -135,7 +138,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ### Contact Form
 
 - Client-side validation
-- Stores submissions in Supabase (Postgres)
+- Stores submissions via Express API in MongoDB Atlas
 - Real-time updates for Admin dashboard
 - Toast notifications for user feedback
 
