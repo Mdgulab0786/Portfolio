@@ -36,3 +36,4 @@ build/
 
 # Cache
 .cache/
+server/.env
