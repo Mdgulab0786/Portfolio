@@ -30,12 +30,27 @@ router.post("/login", async (req, res) => {
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH)
     return res.status(500).json({ error: "Admin credentials not configured" });
 
-  if (email !== ADMIN_EMAIL)
+  // Basic sanity check: ensure hash looks like bcrypt to avoid plaintext misconfig
+  const looksHashed = /^\$2[aby]\$/.test(ADMIN_PASSWORD_HASH);
+  if (!looksHashed) {
+    return res
+      .status(500)
+      .json({
+        error: "Server configuration error: admin password hash invalid",
+      });
+  }
+
+  // Normalize inputs to avoid common mistakes (extra spaces, case differences)
+  const inputEmail = String(email).trim().toLowerCase();
+  const storedEmail = String(ADMIN_EMAIL).trim().toLowerCase();
+  const inputPassword = String(password).trim();
+
+  if (inputEmail !== storedEmail)
     return res.status(401).json({ error: "Invalid credentials" });
   if (process.env.NODE_ENV !== "production") {
     console.log("[Auth Debug] Login attempt", {
-      email,
-      storedEmail: ADMIN_EMAIL,
+      email: inputEmail,
+      storedEmail,
     });
     console.log(
       "[Auth Debug] Hash prefix/len",
@@ -43,13 +58,15 @@ router.post("/login", async (req, res) => {
       ADMIN_PASSWORD_HASH.length
     );
   }
-  const ok = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+  const ok = await bcrypt.compare(inputPassword, ADMIN_PASSWORD_HASH);
   if (process.env.NODE_ENV !== "production") {
     console.log("[Auth Debug] bcrypt.compare", ok);
   }
   if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 
-  const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "7d" });
+  const token = jwt.sign({ email: storedEmail }, JWT_SECRET, {
+    expiresIn: "7d",
+  });
   return res.json({ token });
 });
 
