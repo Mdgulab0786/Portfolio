@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Block admin/private areas if any
+Disallow: /admin
+Disallow: /admin-login
+
+Sitemap: https://www.gulabportfollio.me/sitemap.xml
