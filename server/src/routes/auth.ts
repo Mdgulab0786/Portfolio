@@ -32,7 +32,21 @@ router.post("/login", async (req, res) => {
 
   if (email !== ADMIN_EMAIL)
     return res.status(401).json({ error: "Invalid credentials" });
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[Auth Debug] Login attempt", {
+      email,
+      storedEmail: ADMIN_EMAIL,
+    });
+    console.log(
+      "[Auth Debug] Hash prefix/len",
+      ADMIN_PASSWORD_HASH.substring(0, 12),
+      ADMIN_PASSWORD_HASH.length
+    );
+  }
   const ok = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[Auth Debug] bcrypt.compare", ok);
+  }
   if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 
   const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: "7d" });
@@ -42,6 +56,21 @@ router.post("/login", async (req, res) => {
 router.get("/me", requireAuth, (req, res) => {
   const user = (req as any).user;
   res.json({ user });
+});
+
+// Debug endpoint (only enabled outside production) to verify loaded admin creds
+router.get("/debug", (req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  return res.json({
+    adminEmail: ADMIN_EMAIL || null,
+    hashPrefix: ADMIN_PASSWORD_HASH
+      ? ADMIN_PASSWORD_HASH.substring(0, 12)
+      : null,
+    hashLength: ADMIN_PASSWORD_HASH.length || 0,
+    jwtConfigured: !!process.env.JWT_SECRET,
+  });
 });
 
 export { requireAuth };
