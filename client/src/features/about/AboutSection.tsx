@@ -702,7 +702,7 @@ const AboutSection = () => {
               <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-3xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300 animate-pulse"></div>
               <div className="relative bg-white dark:bg-slate-800 p-4 rounded-3xl shadow-2xl">
                 <img
-                  src="/md-gulab-1.png"
+                  src="/md-gulab-1.jpg"
                   alt="Md Gulab"
                   className="rounded-2xl w-full max-w-sm mx-auto object-cover transform group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
