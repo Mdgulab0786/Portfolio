@@ -5,9 +5,9 @@ import type { Request, Response, NextFunction } from "express";
 
 const router = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "";
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "";
+const JWT_SECRET = (process.env.JWT_SECRET || "dev-secret").trim();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "").trim();
+const ADMIN_PASSWORD_HASH = (process.env.ADMIN_PASSWORD_HASH || "").trim();
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   const auth = req.headers.authorization;
@@ -33,11 +33,9 @@ router.post("/login", async (req, res) => {
   // Basic sanity check: ensure hash looks like bcrypt to avoid plaintext misconfig
   const looksHashed = /^\$2[aby]\$/.test(ADMIN_PASSWORD_HASH);
   if (!looksHashed) {
-    return res
-      .status(500)
-      .json({
-        error: "Server configuration error: admin password hash invalid",
-      });
+    return res.status(500).json({
+      error: "Server configuration error: admin password hash invalid",
+    });
   }
 
   // Normalize inputs to avoid common mistakes (extra spaces, case differences)
