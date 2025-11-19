@@ -14,6 +14,7 @@
     "build:server": "npm --prefix server run build",
     "build:full": "npm run build:client && npm run build:server",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "validate:seo": "node scripts/validate-seo.mjs",
     "postbuild": "npm run generate:sitemap",
     "start:server": "node server/dist/index.js"
   },

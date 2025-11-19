@@ -2,7 +2,7 @@ import type { Contact } from "@/types/contact";
 
 // In unified deploy, omit VITE_API_BASE_URL to use same-origin relative routes
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-const authHeader = () => {
+const authHeader = (): Record<string, string> => {
   const token = localStorage.getItem("adminToken");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
@@ -53,7 +53,7 @@ export class ContactService {
     stats: { total: number; unread: number; read: number };
   }> {
     const res = await fetch(`${API_BASE}/api/contacts`, {
-      headers: { ...authHeader() },
+      headers: authHeader(),
     });
     if (!res.ok) {
       throw new Error("Failed to fetch submissions");
@@ -84,7 +84,7 @@ export class ContactService {
     if (status === "read") {
       const res = await fetch(`${API_BASE}/api/contacts/${id}/read`, {
         method: "PATCH",
-        headers: { ...authHeader() },
+        headers: authHeader(),
       });
       if (!res.ok) throw new Error("Failed to update submission status");
     } else {
@@ -96,7 +96,7 @@ export class ContactService {
   static async deleteSubmission(id: string): Promise<void> {
     const res = await fetch(`${API_BASE}/api/contacts/${id}`, {
       method: "DELETE",
-      headers: { ...authHeader() },
+      headers: authHeader(),
     });
     if (!res.ok) throw new Error("Failed to delete submission");
   }

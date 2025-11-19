@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1200, initial-scale=1" />
+    <title>Md Gulab - Portfolio OG Image</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        width: 1200px;
+        height: 630px;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e3a8a 50%,
+          #0f172a 100%
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+      body::before {
+        content: "";
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(
+          circle,
+          rgba(59, 130, 246, 0.3) 0%,
+          transparent 70%
+        );
+        border-radius: 50%;
+        top: -100px;
+        right: -100px;
+        animation: pulse 4s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.3;
+        }
+        50% {
+          transform: scale(1.1);
+          opacity: 0.5;
+        }
+      }
+      .container {
+        text-align: center;
+        z-index: 1;
+        padding: 60px;
+      }
+      .logo {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 50%;
+        margin: 0 auto 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        font-weight: bold;
+        color: white;
+        border: 4px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 20px 60px rgba(59, 130, 246, 0.4);
+      }
+      h1 {
+        font-size: 72px;
+        font-weight: 800;
+        color: white;
+        margin-bottom: 20px;
+        background: linear-gradient(90deg, #ffffff 0%, #93c5fd 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .subtitle {
+        font-size: 36px;
+        color: #93c5fd;
+        font-weight: 600;
+        margin-bottom: 30px;
+      }
+      .tech-stack {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 40px;
+      }
+      .tech-badge {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 12px 28px;
+        border-radius: 30px;
+        color: white;
+        font-size: 20px;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .footer {
+        position: absolute;
+        bottom: 40px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 24px;
+        color: #cbd5e1;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo">MG</div>
+      <h1>Md Gulab</h1>
+      <div class="subtitle">Full Stack Web Developer</div>
+      <div class="tech-stack">
+        <div class="tech-badge">React</div>
+        <div class="tech-badge">TypeScript</div>
+        <div class="tech-badge">Node.js</div>
+        <div class="tech-badge">MongoDB</div>
+      </div>
+    </div>
+    <div class="footer">gulabportfollio.me</div>
+  </body>
+</html>
+
+<!-- 
+To generate the actual OG image from this template:
+1. Open this file in a browser at 1200x630 resolution
+2. Take a screenshot or use a tool like:
+   - https://www.screely.com/
+   - Browser DevTools screenshot feature
+   - Puppeteer/Playwright script
+3. Save as og-image.jpg or og-image.png
+4. Place in client/public/ folder
+5. Update the OG image meta tags in index.html
+-->

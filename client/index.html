@@ -18,20 +18,57 @@
       content="Md Gulab, Gulab Portfolio, Full Stack Developer, MERN, React Developer, Node.js Developer, TypeScript, Web Developer India, MongoDB, Express"
     />
     <meta name="author" content="Md Gulab" />
-    <meta name="robots" content="index,follow" />
+    <meta
+      name="robots"
+      content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"
+    />
     <meta name="language" content="English" />
     <meta name="theme-color" content="#0f172a" />
+    <meta name="geo.region" content="IN" />
+    <meta name="geo.placename" content="India" />
+    <meta name="coverage" content="Worldwide" />
+    <meta name="distribution" content="Global" />
+    <meta name="rating" content="General" />
+    <meta name="referrer" content="no-referrer-when-downgrade" />
+
+    <!-- Verification Meta Tags (Update these after creating GSC/Bing properties) -->
+    <meta
+      name="google-site-verification"
+      content="YOUR_GOOGLE_VERIFICATION_CODE"
+    />
+    <meta name="msvalidate.01" content="YOUR_BING_VERIFICATION_CODE" />
+
     <link rel="canonical" href="https://www.gulabportfollio.me/" />
     <link
       rel="alternate"
       href="https://www.gulabportfollio.me/"
       hreflang="en"
     />
+    <link
+      rel="alternate"
+      href="https://www.gulabportfollio.me/"
+      hreflang="x-default"
+    />
 
     <!-- Performance Hints -->
     <link rel="preload" href="/favicon.png" as="image" />
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
     <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="/src/main.tsx" />
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      as="style"
+    />
+
+    <!-- Resource hints for external domains -->
+    <meta http-equiv="x-dns-prefetch-control" content="on" />
 
     <!-- Open Graph -->
     <meta
@@ -69,22 +106,115 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Person",
-        "name": "Md Gulab",
-        "url": "https://www.gulabportfollio.me/",
-        "image": "https://www.gulabportfollio.me/md-gulab-1.jpg",
-        "jobTitle": "Full Stack Web Developer",
-        "sameAs": ["https://github.com/Mdgulab0786"],
-        "knowsAbout": [
-          "React",
-          "TypeScript",
-          "Node.js",
-          "Express",
-          "MongoDB",
-          "Web Performance",
-          "API Development"
-        ],
-        "description": "Full Stack (MERN) developer building fast, accessible and scalable web applications."
+        "@graph": [
+          {
+            "@type": "Person",
+            "@id": "https://www.gulabportfollio.me/#person",
+            "name": "Md Gulab",
+            "givenName": "Gulab",
+            "familyName": "Md",
+            "url": "https://www.gulabportfollio.me/",
+            "image": {
+              "@type": "ImageObject",
+              "url": "https://www.gulabportfollio.me/md-gulab-1.jpg",
+              "width": 800,
+              "height": 800
+            },
+            "jobTitle": "Full Stack Web Developer",
+            "worksFor": {
+              "@type": "Organization",
+              "name": "Freelance"
+            },
+            "email": "team66415@gmail.com",
+            "telephone": "+91-XXXXXXXXXX",
+            "address": {
+              "@type": "PostalAddress",
+              "addressCountry": "IN",
+              "addressRegion": "India"
+            },
+            "sameAs": [
+              "https://github.com/Mdgulab0786",
+              "https://www.linkedin.com/in/gulab",
+              "https://twitter.com/gulab"
+            ],
+            "knowsAbout": [
+              "React",
+              "TypeScript",
+              "Node.js",
+              "Express.js",
+              "MongoDB",
+              "PostgreSQL",
+              "RESTful API",
+              "GraphQL",
+              "Docker",
+              "Git",
+              "Web Performance Optimization",
+              "Responsive Design",
+              "Full Stack Development",
+              "MERN Stack"
+            ],
+            "knowsLanguage": [
+              {
+                "@type": "Language",
+                "name": "English",
+                "alternateName": "en"
+              },
+              {
+                "@type": "Language",
+                "name": "Hindi",
+                "alternateName": "hi"
+              }
+            ],
+            "description": "Full Stack (MERN) developer building fast, accessible and scalable web applications with modern technologies including React, TypeScript, Node.js, Express, and MongoDB.",
+            "alumniOf": {
+              "@type": "EducationalOrganization",
+              "name": "Your University/College"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://www.gulabportfollio.me/#website",
+            "url": "https://www.gulabportfollio.me/",
+            "name": "Md Gulab Portfolio",
+            "description": "Portfolio website showcasing full stack web development projects and skills",
+            "publisher": {
+              "@id": "https://www.gulabportfollio.me/#person"
+            },
+            "inLanguage": "en-US",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://www.gulabportfollio.me/?s={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://www.gulabportfollio.me/#webpage",
+            "url": "https://www.gulabportfollio.me/",
+            "name": "Md Gulab | Full Stack Web Developer Portfolio",
+            "isPartOf": {
+              "@id": "https://www.gulabportfollio.me/#website"
+            },
+            "about": {
+              "@id": "https://www.gulabportfollio.me/#person"
+            },
+            "description": "Portfolio of Md Gulab – Full Stack (MERN) Developer building fast, accessible and scalable web applications with React, TypeScript, Node.js, Express and MongoDB.",
+            "inLanguage": "en-US",
+            "potentialAction": [
+              {
+                "@type": "ReadAction",
+                "target": ["https://www.gulabportfollio.me/"]
+              }
+            ]
+          },
+          {
+            "@type": "ProfilePage",
+            "@id": "https://www.gulabportfollio.me/#profilepage",
+            "mainEntity": {
+              "@id": "https://www.gulabportfollio.me/#person"
+            }
+          }
+        ]
       }
     </script>
 
@@ -92,9 +222,7 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
 
-    <!-- Fonts and Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonts and Icons (preconnect already defined above) -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
@@ -102,6 +230,8 @@
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
     />
   </head>
   <body>

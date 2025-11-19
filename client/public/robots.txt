@@ -1,8 +1,51 @@
+# Robots.txt for gulabportfollio.me
+# Updated: 2025-11-19
+
 User-agent: *
 Allow: /
 
-# Block admin/private areas if any
+# Block admin/private areas
 Disallow: /admin
 Disallow: /admin-login
+Disallow: /api/
 
+# Allow specific resource types
+Allow: /assets/
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.png$
+Allow: /*.webp$
+Allow: /*.svg$
+
+# Crawl-delay (optional, prevents aggressive crawling)
+# Crawl-delay: 1
+
+# Sitemaps
 Sitemap: https://www.gulabportfollio.me/sitemap.xml
+
+# Additional directives for major search engines
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+User-agent: Slurp
+Allow: /
+Disallow: /admin
+
+# Block bad bots (optional)
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10

@@ -160,6 +160,48 @@ const ContactSection = () => {
         "🎉 Message sent successfully! I'll get back to you within 24 hours."
       );
 
+      // Trigger lightweight confetti burst
+      try {
+        const duration = 1200;
+        const end = Date.now() + duration;
+        const colors = ["#38bdf8", "#a78bfa", "#22c55e", "#f59e0b", "#ef4444"];
+        const canvas = document.createElement("canvas");
+        canvas.style.position = "fixed";
+        canvas.style.pointerEvents = "none";
+        canvas.style.inset = "0";
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext("2d")!;
+        document.body.appendChild(canvas);
+        const pieces = Array.from({ length: 120 }, () => ({
+          x: Math.random() * canvas.width,
+          y: -20 - Math.random() * 40,
+          r: 4 + Math.random() * 6,
+          c: colors[Math.floor(Math.random() * colors.length)],
+          vx: -2 + Math.random() * 4,
+          vy: 2 + Math.random() * 3,
+          a: Math.random() * Math.PI,
+        }));
+        const tick = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          pieces.forEach((p) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.03;
+            p.a += 0.1;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.a);
+            ctx.fillStyle = p.c;
+            ctx.fillRect(-p.r, -p.r, p.r * 2, p.r * 2);
+            ctx.restore();
+          });
+          if (Date.now() < end) requestAnimationFrame(tick);
+          else document.body.removeChild(canvas);
+        };
+        requestAnimationFrame(tick);
+      } catch {}
+
       // Reset form
       setFormData({
         name: "",
@@ -693,6 +735,7 @@ const ContactSection = () => {
                     type="submit"
                     disabled={submitStatus === "submitting"}
                     className="w-full h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 transform hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-blue-500/30 rounded-2xl font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
+                    data-magnetic
                   >
                     {submitStatus === "submitting" ? (
                       <div className="flex items-center justify-center">
